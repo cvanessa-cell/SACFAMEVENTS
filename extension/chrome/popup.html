@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Family Finder</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <style>
+      body {
+        font-family:
+          Inter,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        margin: 0;
+        padding: 16px;
+        width: 360px;
+      }
+      textarea {
+        width: 100%;
+        min-height: 160px;
+        font-family: monospace;
+        font-size: 12px;
+      }
+      pre {
+        background: #111827;
+        color: #e5e7eb;
+        padding: 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        overflow: auto;
+        max-height: 220px;
+      }
+      button {
+        padding: 8px 12px;
+        border-radius: 6px;
+        border: none;
+        background: #2563eb;
+        color: #fff;
+        font-weight: 600;
+        cursor: pointer;
+        margin-right: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <strong>Sacramento Family Event Finder</strong>
+    <p style="font-size: 13px; color: #4b5563">
+      Paste a Google Calendar description to view metadata captured by the app.
+    </p>
+    <textarea id="input" placeholder="Paste description…"></textarea>
+    <div style="margin: 12px 0;">
+      <button id="run">Parse block</button>
+      <button id="clear" style="background: #6b7280">Clear</button>
+    </div>
+    <pre id="output">{}</pre>
+    <script type="module" src="dist/popup.js"></script>
+  </body>
+</html>

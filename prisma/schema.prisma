@@ -1,0 +1,63 @@
+// Local app state: OAuth tokens, automation preferences, run logs.
+// Master event data lives in Airtable.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model GoogleOAuthState {
+  id        String   @id @default(cuid())
+  state     String   @unique
+  createdAt DateTime @default(now())
+}
+
+model GoogleCalendarCredentials {
+  id           String    @id @default("singleton")
+  accessToken  String
+  refreshToken String?
+  expiry       DateTime?
+  scope        String?
+  updatedAt    DateTime  @updatedAt
+}
+
+model AppAutomationSettings {
+  id                          String   @id @default("singleton")
+  automationEnabled           Boolean  @default(false)
+  frequency                   String   @default("weekly") // daily | weekly | monthly
+  preferredRunTime            String   @default("09:00") // HH:mm local
+  maxSourcesPerRun            Int      @default(25)
+  onlyActiveSources           Boolean  @default(true)
+  autoConfirmHighConfidence   Boolean  @default(false)
+  autoAddToGoogleCalendar     Boolean  @default(false)
+  minConfidenceAutoConfirm    Float    @default(0.85)
+  defaultReminderProfile      String   @default("1h") // none | 30m | 1h | 1d | custom
+  customReminderMinutesJson   String? // JSON number[] for custom profile
+  zapierWebhookEnabled        Boolean  @default(false)
+  updatedAt                   DateTime @updatedAt
+}
+
+model DiscoveryRunLog {
+  id         String   @id @default(cuid())
+  startedAt  DateTime @default(now())
+  finishedAt DateTime?
+  status     String // running | success | error
+  message    String?
+  sourcesTried Int     @default(0)
+  eventsUpserted Int   @default(0)
+}
+
+model ZapierWebhookLog {
+  id                String   @id @default(cuid())
+  createdAt         DateTime @default(now())
+  selectionKey      String
+  airtableRecordId  String?
+  eventNameSnapshot String
+  status            String // success | error
+  httpStatus        Int?
+  detail            String?
+}

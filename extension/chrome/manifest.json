@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "Sacramento Family Event Finder",
+  "version": "0.1.0",
+  "description": "Parse Family Event Finder metadata embedded in Google Calendar descriptions.",
+  "action": {
+    "default_title": "Family Event Finder",
+    "default_popup": "popup.html"
+  },
+  "host_permissions": ["https://calendar.google.com/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://calendar.google.com/*"],
+      "js": ["dist/contentScript.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
