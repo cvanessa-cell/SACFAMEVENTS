@@ -16,7 +16,12 @@
     "discover:once": "tsx scripts/runDiscovery.ts",
     "scheduler:run": "tsx scripts/schedulerCli.ts",
     "test:calendar": "tsx scripts/testGoogleCalendarCreate.ts",
-    "extension:build": "node scripts/extension-build.mjs"
+    "extension:build": "node scripts/extension-build.mjs",
+    "event-sources:seed": "tsx scripts/seed-event-sources.ts",
+    "event-sources:check": "tsx scripts/check-event-sources.ts",
+    "openai:webhook:process": "tsx scripts/process-openai-webhook-tasks.ts",
+    "test:webhook": "tsx scripts/test-openai-webhook-local.ts",
+    "test:event-extraction": "tsx scripts/test-event-extraction.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

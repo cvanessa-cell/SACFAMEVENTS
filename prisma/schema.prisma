@@ -61,3 +61,156 @@ model ZapierWebhookLog {
   httpStatus        Int?
   detail            String?
 }
+
+model SlackDecisionState {
+  id            String   @id @default("singleton")
+  lastSignature String?
+  lastSummary   String?
+  lastDecisionPostedAt DateTime?
+  lastHumanActivityAt  DateTime?
+  updatedAt     DateTime @updatedAt
+}
+
+model EventSource {
+  id                     String   @id @default(cuid())
+  name                   String
+  category               String?
+  region                 String?
+  city                   String?
+  county                 String?
+  sourceUrl              String   @unique
+  sourceType             String   @default("unknown") // html | rss | ical | google_calendar | facebook_public | manual | api | unknown
+  fetchStrategy          String   @default("direct_fetch") // direct_fetch | rss_parse | ical_parse | manual_review | disabled
+  checkFrequencyMinutes  Int      @default(360)
+  enabled                Boolean  @default(true)
+  trustedSourceScore     Float    @default(0.5)
+  lastCheckedAt          DateTime?
+  lastSuccessAt          DateTime?
+  lastFailureAt          DateTime?
+  lastStatus             String?
+  lastError              String?
+  lastContentHash        String?
+  lastSnapshotText       String?
+  notes                  String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  fetchLogs              SourceFetchLog[]
+  sourceChanges          SourceChange[]
+  familyEvents           FamilyEvent[]
+}
+
+model SourceFetchLog {
+  id            String   @id @default(cuid())
+  sourceId      String
+  startedAt     DateTime
+  finishedAt    DateTime?
+  status        String // success | unchanged | changed | failed | skipped
+  httpStatus    Int?
+  contentHash   String?
+  contentLength Int?
+  errorMessage  String?
+  createdAt     DateTime @default(now())
+
+  source        EventSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@index([sourceId, createdAt])
+}
+
+model SourceChange {
+  id                String   @id @default(cuid())
+  sourceId          String
+  oldHash           String?
+  newHash           String
+  changeSummary     String?
+  changedTextExcerpt String?
+  fullSnapshotText  String?
+  snapshotStorageKey String?
+  status            String   @default("pending_ai") // pending_ai | sent_to_openai | ai_completed | ai_failed | reviewed | ignored
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  source            EventSource           @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  aiJobs            AiEventExtractionJob[]
+  familyEvents      FamilyEvent[]
+
+  @@index([sourceId, createdAt])
+}
+
+model AiEventExtractionJob {
+  id               String   @id @default(cuid())
+  sourceChangeId   String
+  openaiResponseId String?  @unique
+  status           String   @default("created") // created | sent | completed | failed | incomplete | cancelled
+  requestPayload   String?
+  rawResponseText  String?
+  parsedJson       String?
+  errorMessage     String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  sourceChange     SourceChange @relation(fields: [sourceChangeId], references: [id], onDelete: Cascade)
+
+  @@index([sourceChangeId, createdAt])
+}
+
+model FamilyEvent {
+  id                  String   @id @default(cuid())
+  title               String
+  description         String?
+  sourceEventUrl      String?
+  sourceId            String?
+  sourceChangeId      String?
+  city                String?
+  county              String?
+  venueName           String?
+  address             String?
+  startDatetime       DateTime?
+  endDatetime         DateTime?
+  timezone            String   @default("America/Los_Angeles")
+  ageRange            String?
+  priceText           String?
+  registrationUrl     String?
+  familyFriendlyScore Float?
+  confidence          Float?
+  status              String   @default("needs_review") // needs_review | approved | rejected | exported_to_calendar | cancelled | duplicate
+  duplicateKey        String?
+  cancellationStatus  String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  source              EventSource? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  sourceChange        SourceChange? @relation(fields: [sourceChangeId], references: [id], onDelete: SetNull)
+  reviewNotes         EventReviewNote[]
+
+  @@index([sourceId, createdAt])
+  @@index([sourceChangeId, createdAt])
+  @@index([duplicateKey])
+}
+
+model EventReviewNote {
+  id           String   @id @default(cuid())
+  familyEventId String
+  note         String
+  createdAt    DateTime @default(now())
+
+  familyEvent  FamilyEvent @relation(fields: [familyEventId], references: [id], onDelete: Cascade)
+
+  @@index([familyEventId, createdAt])
+}
+
+model OpenAIWebhookTask {
+  id          String   @id @default(cuid())
+  eventType   String
+  responseId  String
+  payloadJson String
+  status      String   @default("pending") // pending | processing | completed | failed
+  attempts    Int      @default(0)
+  errorMessage String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  processedAt DateTime?
+
+  @@index([status, createdAt])
+  @@index([responseId, createdAt])
+}

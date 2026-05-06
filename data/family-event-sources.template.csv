@@ -1,0 +1,6 @@
+name,category,region,city,county,source_url,source_type,fetch_strategy,check_frequency_minutes,enabled,trusted_source_score,notes
+City of Sacramento Events,city calendars,Sacramento / Placer,Sacramento,Sacramento,https://www.cityofsacramento.gov/events,html,direct_fetch,360,true,0.9,
+Placer County Events,county calendars,Sacramento / Placer,Auburn,Placer,https://www.placer.ca.gov/calendar,html,direct_fetch,360,true,0.9,
+Roseville Parks and Recreation,parks and recreation,Sacramento / Placer,Roseville,Placer,https://www.roseville.ca.us/government/departments/parks/events,html,direct_fetch,360,true,0.9,
+Sacramento Public Library Calendar,library calendars,Sacramento / Placer,Sacramento,Sacramento,https://engage.saclibrary.org/events,html,direct_fetch,360,true,0.9,
+Manual Facebook Public Links Queue,local Facebook groups/pages where allowed,Sacramento / Placer,,,https://example.com/manual-import,manual,manual_review,1440,false,0.5,Use manual import for public event links only.

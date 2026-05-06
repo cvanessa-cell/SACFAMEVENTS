@@ -1,5 +1,8 @@
 {
   "mcpServers": {
+    "airtable": {
+      "url": "https://mcp.airtable.com/mcp"
+    },
     "zapier": {
       "url": "https://mcp.zapier.com/api/v1/connect"
     }

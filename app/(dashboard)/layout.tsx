@@ -27,6 +27,9 @@ export default function DashboardLayout({
             <Link className="hover:text-foreground" href="/settings">
               Settings &amp; automation
             </Link>
+            <Link className="hover:text-foreground" href="/admin/event-monitoring">
+              Event monitoring
+            </Link>
           </nav>
         </div>
       </div>
