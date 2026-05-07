@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/check-event-sources",
-      "schedule": "0 */6 * * *"
+      "schedule": "0 8 * * *"
     },
     {
       "path": "/api/cron/slack-daily-digest",
@@ -10,7 +10,7 @@
     },
     {
       "path": "/api/cron/process-openai-webhook-tasks",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 12 * * *"
     }
   ]
 }
