@@ -142,7 +142,7 @@ export async function verifyOpenAIWebhook(rawBody: string, headers: HeaderBag) {
   }
   const client = getOpenAIClient();
   try {
-    const event = client.webhooks.unwrap(rawBody, headers, { secret }) as {
+    const event = (await client.webhooks.unwrap(rawBody, headers, secret)) as {
       type?: string;
       data?: { id?: string };
     };

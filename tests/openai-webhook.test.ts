@@ -30,16 +30,14 @@ describe("processOpenAIWebhook", () => {
   });
 
   it("rejects invalid signatures", async () => {
-    mockUnwrap.mockImplementation(() => {
-      throw new Error("bad sig");
-    });
+    mockUnwrap.mockRejectedValue(new Error("bad sig"));
     const { processOpenAIWebhook } = await import("@/lib/openai/webhookProcessor");
     const result = await processOpenAIWebhook("{}", {});
     expect(result.status).toBe(400);
   });
 
   it("marks failed jobs on response.failed", async () => {
-    mockUnwrap.mockReturnValue({ type: "response.failed", data: { id: "resp_1" } });
+    mockUnwrap.mockResolvedValue({ type: "response.failed", data: { id: "resp_1" } });
     mockPrisma.aiEventExtractionJob.findUnique.mockResolvedValue({
       id: "job_1",
       sourceChangeId: "change_1",
@@ -53,7 +51,7 @@ describe("processOpenAIWebhook", () => {
   });
 
   it("handles response.completed retrieval + parse", async () => {
-    mockUnwrap.mockReturnValue({ type: "response.completed", data: { id: "resp_2" } });
+    mockUnwrap.mockResolvedValue({ type: "response.completed", data: { id: "resp_2" } });
     mockPrisma.aiEventExtractionJob.findUnique.mockResolvedValue({
       id: "job_2",
       sourceChangeId: "change_2",

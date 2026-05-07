@@ -1,0 +1,13 @@
+@echo off
+cd /d "%~dp0"
+echo Removing stale git lock if present...
+if exist ".git\index.lock" del ".git\index.lock"
+echo Staging all changes...
+git add -A
+echo Committing...
+git commit -m "Update project files: pipeline, webhook queue, UI components, and integrations"
+echo Pushing to GitHub...
+git push origin main
+echo.
+echo Done! Press any key to close.
+pause

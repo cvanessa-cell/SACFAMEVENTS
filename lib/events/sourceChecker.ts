@@ -34,7 +34,9 @@ async function fetchSourceText(url: string, timeoutMs = 15000): Promise<{ text: 
 
 export async function checkSingleSource(sourceId: string) {
   const source = await prisma.eventSource.findUnique({ where: { id: sourceId } });
-  if (!source) throw new Error("Source not found");
+  if (!source) {
+    return { status: "failed" as const, error: "Source not found" };
+  }
   if (!source.enabled || source.fetchStrategy === "disabled" || source.fetchStrategy === "manual_review") {
     await prisma.sourceFetchLog.create({
       data: {
