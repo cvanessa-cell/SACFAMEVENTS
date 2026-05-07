@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from "next/server";
 
 import { processPendingOpenAIWebhookTasks } from "@/lib/openai/webhookQueue";
