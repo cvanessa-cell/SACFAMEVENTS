@@ -132,7 +132,7 @@ export async function processOpenAIWebhook(rawBody: string, headers: HeaderBag) 
   if (!verified.ok) {
     return { ok: false, status: verified.status, message: verified.message };
   }
-  return handleVerifiedEvent(verified.event);
+  return handleVerifiedEvent(verified.event!);
 }
 
 export async function verifyOpenAIWebhook(rawBody: string, headers: HeaderBag) {

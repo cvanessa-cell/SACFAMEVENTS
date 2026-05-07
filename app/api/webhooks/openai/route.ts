@@ -14,7 +14,7 @@ export async function POST(req: Request) {
   if (!verified.ok) {
     return NextResponse.json({ ok: false, message: verified.message }, { status: verified.status });
   }
-  const task = await enqueueOpenAIWebhookTask(verified.event);
+  const task = await enqueueOpenAIWebhookTask(verified.event as { type: string; data?: { id?: string } });
   return NextResponse.json(
     { ok: true, enqueued: true, taskId: task?.id ?? null },
     { status: 200 },

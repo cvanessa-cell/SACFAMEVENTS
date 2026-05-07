@@ -141,7 +141,7 @@ export async function GET(req: Request) {
       nowMs - previous.lastHumanActivityAt.getTime() >= inactiveMs;
     const inCooldown =
       Boolean(previous?.lastDecisionPostedAt) &&
-      nowMs - previous.lastDecisionPostedAt.getTime() < cooldownMs;
+      nowMs - previous!.lastDecisionPostedAt!.getTime() < cooldownMs;
     const changed = previous?.lastSignature !== signature;
     if (changed && !isInactive && !inCooldown) {
       await sendSlackSignal({

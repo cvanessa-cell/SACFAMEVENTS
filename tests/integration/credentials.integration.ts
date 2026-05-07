@@ -49,12 +49,13 @@ describe.skipIf(!LIVE)("integration credentials (INTEGRATION_CREDENTIALS=1)", ()
     "Google Calendar: Prisma OAuth tokens can call calendarList.list",
     async () => {
       const result = await pingGoogleCalendarFromPrisma();
+      const reason = (result as { reason?: string }).reason;
       const hint =
-        result.reason === "no_stored_credentials"
+        reason === "no_stored_credentials"
           ? "Add GoogleCalendarCredentials (id=singleton) after completing Calendar OAuth, or set SKIP_GOOGLE_CALENDAR_LIVE=1 to skip."
-          : result.reason === "missing_oauth_env"
+          : reason === "missing_oauth_env"
             ? "Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI."
-            : result.reason;
+            : reason;
       expect(result.ok, hint).toBe(true);
     },
     60_000,
