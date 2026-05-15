@@ -19,6 +19,13 @@ import { applyEventFilters } from "@/lib/filterEvents";
 import type { GroupMode } from "@/lib/eventGrouping";
 import type { FamilyEvent } from "@/lib/validation";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 type EventsPayload = {
   source: "mock" | "airtable" | string;
@@ -120,34 +127,39 @@ export function EventsExplorer() {
 
   return (
     <div className="space-y-8">
-      <header className="flex flex-col gap-2">
-        <h1 className="text-3xl font-semibold tracking-tight">
-          Family events ({filtered.length} shown)
-        </h1>
-        <p className="text-muted-foreground">
-          Browse events from your Airtable base &quot;FAMILY EVENTS&quot; (or demo
-          data).
-        </p>
-        {(warning || error) ? (
-          <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
-            {warning ||
-              (error instanceof Error ? error.message : String(error))}
-          </p>
-        ) : null}
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            type="button"
-            onClick={() => refetch()}
-            disabled={isFetching}
-          >
-            {isFetching ? "Refreshing…" : "Reload from API"}
-          </Button>
-          <Button variant="outline" type="button" asChild>
-            <a href="/api/events?mock=1">View mock JSON</a>
-          </Button>
-        </div>
-      </header>
+      <Card className="overflow-hidden border-primary/15 bg-gradient-to-br from-primary/[0.06] to-card shadow-sm">
+        <CardHeader className="space-y-3">
+          <CardTitle className="text-2xl sm:text-3xl">
+            Family events
+            <span className="ml-2 text-lg font-normal text-muted-foreground">
+              ({filtered.length} shown)
+            </span>
+          </CardTitle>
+          <CardDescription className="max-w-2xl text-base">
+            Browse events from your Airtable base &quot;FAMILY EVENTS&quot; (or demo data). Select
+            rows to add to Google Calendar or send via Zapier.
+          </CardDescription>
+          {(warning || error) ? (
+            <p className="rounded-lg border border-amber-500/25 bg-amber-50 px-3 py-2 text-sm text-amber-950 dark:bg-amber-950/30 dark:text-amber-100">
+              {warning ||
+                (error instanceof Error ? error.message : String(error))}
+            </p>
+          ) : null}
+          <div className="flex flex-wrap gap-2 pt-1">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => refetch()}
+              disabled={isFetching}
+            >
+              {isFetching ? "Refreshing…" : "Reload from API"}
+            </Button>
+            <Button variant="outline" type="button" asChild>
+              <a href="/api/events?mock=1">View mock JSON</a>
+            </Button>
+          </div>
+        </CardHeader>
+      </Card>
 
       <section className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -186,7 +198,7 @@ export function EventsExplorer() {
         />
       </section>
 
-      <section className="flex flex-col gap-4 rounded-lg border bg-muted/40 p-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+      <section className="flex flex-col gap-4 rounded-xl border border-border/60 bg-muted/30 p-4 shadow-sm sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
         <div className="text-sm">
           <span className="font-medium">{selectedIdsArr.length}</span> selected
           {filtered.length !== events.length

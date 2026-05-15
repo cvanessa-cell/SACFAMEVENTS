@@ -209,6 +209,107 @@ function normalizeAirtableDate(input: string): string {
   return s;
 }
 
+export interface AirtableEventFields {
+  "Event Name": string;
+  Date: string;
+  "Start Time"?: string;
+  "End Time"?: string;
+  City?: string;
+  Venue?: string;
+  Address?: string;
+  "Source Name"?: string;
+  "Source Link"?: string;
+  "Event Link"?: string;
+  "Age Range"?: string;
+  Cost?: string;
+  "Free?"?: boolean;
+  Category?: string;
+  Description?: string;
+  Status: string;
+  "Confidence Score"?: number;
+}
+
+/**
+ * Create a new record in the Airtable events table for an approved event.
+ * Returns the Airtable record ID on success, null if Airtable is not configured.
+ */
+export async function createAirtableEventRecord(
+  fields: AirtableEventFields,
+): Promise<string | null> {
+  const cfg = getAirtableConfig();
+  if (!cfg) return null;
+
+  const path = `/${encodeURIComponent(cfg.baseId)}/${encodeURIComponent(cfg.eventsTable)}`;
+  const result = await airtableFetch<{ id: string }>(path, {
+    method: "POST",
+    apiKey: cfg.apiKey,
+    body: JSON.stringify({ fields }),
+  });
+
+  return result.id;
+}
+
+/**
+ * Syncs a Prisma FamilyEvent to Airtable on approval. Converts the DB
+ * record fields to the Airtable column names used by the events table.
+ */
+export async function syncApprovedEventToAirtable(event: {
+  title: string;
+  description?: string | null;
+  city?: string | null;
+  venueName?: string | null;
+  address?: string | null;
+  startDatetime?: Date | null;
+  endDatetime?: Date | null;
+  ageRange?: string | null;
+  priceText?: string | null;
+  sourceEventUrl?: string | null;
+  confidence?: number | null;
+  source?: { name: string; sourceUrl: string } | null;
+}): Promise<string | null> {
+  const startDate = event.startDatetime
+    ? event.startDatetime.toISOString().slice(0, 10)
+    : new Date().toISOString().slice(0, 10);
+  const startTime = event.startDatetime
+    ? event.startDatetime.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        timeZone: "America/Los_Angeles",
+      })
+    : undefined;
+  const endTime = event.endDatetime
+    ? event.endDatetime.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        timeZone: "America/Los_Angeles",
+      })
+    : undefined;
+
+  const isFree =
+    event.priceText?.toLowerCase().includes("free") ||
+    event.priceText === "$0" ||
+    event.priceText === "0";
+
+  return createAirtableEventRecord({
+    "Event Name": event.title,
+    Date: startDate,
+    "Start Time": startTime,
+    "End Time": endTime,
+    City: event.city ?? undefined,
+    Venue: event.venueName ?? undefined,
+    Address: event.address ?? undefined,
+    "Source Name": event.source?.name,
+    "Source Link": event.source?.sourceUrl,
+    "Event Link": event.sourceEventUrl ?? undefined,
+    "Age Range": event.ageRange ?? undefined,
+    Cost: event.priceText ?? undefined,
+    "Free?": isFree,
+    Description: event.description ?? undefined,
+    Status: "Approved",
+    "Confidence Score": event.confidence ?? undefined,
+  });
+}
+
 export async function fetchFamilyEventsFromAirtable(): Promise<FamilyEvent[]> {
   const cfg = getAirtableConfig();
   if (!cfg) return [];

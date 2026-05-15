@@ -5,6 +5,9 @@
     },
     "zapier": {
       "url": "https://mcp.zapier.com/api/v1/connect"
+    },
+    "vercel": {
+      "url": "https://mcp.vercel.com"
     }
   }
 }

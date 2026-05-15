@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "hooks": {
+    "afterAgentResponse": [
+      {
+        "command": "node .cursor/hooks/log-response.js"
+      }
+    ],
+    "stop": [
+      {
+        "type": "prompt",
+        "prompt": "Before ending this session, check if .cursor/hooks/session-log.jsonl exists. If it does, read it and use the data to create a record in BOTH: (1) the Notion database 'Cursor Agent Conversations' under 'Nature OT Growth OS' (create a page with a topic title, summary of 2-3 sentences, message count, project name from the workspace, and the full transcript formatted with user/agent labels), and (2) the Airtable table 'Cursor Agent Conversations' in the 'Nature OT Growth OS' base (baseId: app5Ij8xEUVKmviZ4, tableId: tbl0akfnr0fgHAMS8) with the same fields. After successfully creating both records, delete the session-log.jsonl file. Do NOT log if the conversation was solely about setting up or debugging the logging system itself.",
+        "loop_limit": 1
+      }
+    ]
+  }
+}

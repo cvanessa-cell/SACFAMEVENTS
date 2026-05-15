@@ -1,5 +1,7 @@
 # Airtable schema contract
 
+For the newer OpenAI + Airtable source-research workflow, see `docs/SACFAM_AIRTABLE_SCHEMA.md`. This file documents the existing `FAMILY EVENTS` event-data contract.
+
 Canonical base: **FAMILY EVENTS**.
 
 ## Tables & purpose

@@ -6,7 +6,7 @@ export default defineConfig({
   test: {
     environment: "node",
     globals: true,
-    include: ["tests/**/*.test.ts"],
+    include: ["tests/**/*.test.ts", "agent-conversation-indexer/tests/**/*.test.ts"],
     coverage: { reporter: ["text", "html"] },
   },
   resolve: {

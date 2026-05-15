@@ -12,11 +12,15 @@ datasource db {
 }
 
 model GoogleOAuthState {
-  id        String   @id @default(cuid())
-  state     String   @unique
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  state      String   @unique
+  returnPath String?
+  createdAt  DateTime @default(now())
 }
 
+/// DEPRECATED — single-account credentials. Kept temporarily so the old row can
+/// be migrated into `GoogleAccount` via `lib/googleCalendar.ts#claimLegacySingleton`.
+/// Will be dropped in a future migration once all instances have migrated.
 model GoogleCalendarCredentials {
   id           String    @id @default("singleton")
   accessToken  String
@@ -24,6 +28,74 @@ model GoogleCalendarCredentials {
   expiry       DateTime?
   scope        String?
   updatedAt    DateTime  @updatedAt
+}
+
+model GoogleAccount {
+  id                      String   @id @default(cuid())
+  googleUserId            String   @unique // sub claim from Google id_token / userinfo
+  email                   String
+  name                    String?
+  picture                 String?
+  accessToken             String
+  refreshToken            String?
+  expiry                  DateTime?
+  scope                   String?
+  isDefault               Boolean  @default(false)
+  /// Google calendar id this account exports into by default ("primary" or a
+  /// calendar id like "<email>" / "...@group.calendar.google.com").
+  defaultCalendarId       String   @default("primary")
+  defaultCalendarSummary  String?
+  lastUsedAt              DateTime?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  calendars               GoogleAccountCalendar[]
+  exports                 FamilyEventCalendarExport[]
+
+  @@index([email])
+  @@index([isDefault])
+}
+
+model GoogleAccountCalendar {
+  id              String   @id @default(cuid())
+  accountId       String
+  calendarId      String   // Google's calendar id
+  summary         String
+  description     String?
+  timeZone        String?
+  backgroundColor String?
+  foregroundColor String?
+  accessRole      String?  // owner | writer | reader | freeBusyReader
+  primary         Boolean  @default(false)
+  refreshedAt     DateTime @default(now())
+
+  account         GoogleAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([accountId, calendarId])
+  @@index([accountId, primary])
+}
+
+/// Records every Google Calendar export for a FamilyEvent. Multiple rows per
+/// event are expected when an event is pushed to multiple (account, calendar)
+/// targets. Account FK is nullable so disconnects don't erase the audit trail.
+model FamilyEventCalendarExport {
+  id                       String   @id @default(cuid())
+  familyEventId            String
+  accountId                String?
+  accountEmailSnapshot     String
+  accountNameSnapshot      String?
+  calendarId               String
+  calendarSummarySnapshot  String?
+  googleEventId            String
+  htmlLink                 String?
+  exportedAt               DateTime @default(now())
+
+  familyEvent              FamilyEvent  @relation(fields: [familyEventId], references: [id], onDelete: Cascade)
+  account                  GoogleAccount? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+
+  @@unique([familyEventId, accountId, calendarId, googleEventId])
+  @@index([familyEventId, exportedAt])
+  @@index([accountId, exportedAt])
 }
 
 model AppAutomationSettings {
@@ -39,6 +111,13 @@ model AppAutomationSettings {
   defaultReminderProfile      String   @default("1h") // none | 30m | 1h | 1d | custom
   customReminderMinutesJson   String? // JSON number[] for custom profile
   zapierWebhookEnabled        Boolean  @default(false)
+  // Notification preferences
+  slackDigestEnabled          Boolean  @default(true)
+  slackDigestHour             Int      @default(16) // 0–23, hour of day in local tz
+  notifyOnNewEvents           Boolean  @default(true)
+  notifyOnFailedChecks        Boolean  @default(true)
+  notifyOnReviewBacklog       Boolean  @default(true)
+  reviewBacklogThreshold      Int      @default(25)
   updatedAt                   DateTime @updatedAt
 }
 
@@ -177,12 +256,16 @@ model FamilyEvent {
   status              String   @default("needs_review") // needs_review | approved | rejected | exported_to_calendar | cancelled | duplicate
   duplicateKey        String?
   cancellationStatus  String?
+  googleCalendarEventId String?
+  googleCalendarHtmlLink String?
+  googleCalendarExportedAt DateTime?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
   source              EventSource? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
   sourceChange        SourceChange? @relation(fields: [sourceChangeId], references: [id], onDelete: SetNull)
   reviewNotes         EventReviewNote[]
+  calendarExports     FamilyEventCalendarExport[]
 
   @@index([sourceId, createdAt])
   @@index([sourceChangeId, createdAt])
@@ -214,5 +297,139 @@ model OpenAIWebhookTask {
 
   @@index([status, createdAt])
   @@index([responseId, createdAt])
+}
+
+model UiConfig {
+  id        String   @id @default("singleton")
+  config    String   // JSON blob of the full UI config
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// SacFam AI Source Agent — research-run audit row. One row per
+/// invocation of the OpenAI-powered source research workflow.
+model SourceResearchRun {
+  id                   String   @id @default(cuid())
+  status               String   @default("pending") // pending | running | completed | failed
+  requestedBy          String?  // admin label / email if provided
+  targetRegion         String   @default("Sacramento / Placer")
+  requestedSourceCount Int      @default(125)
+  model                String
+  promptVersion        String
+  rawRequestSummary    String?  // short text summary of the prompt + filters
+  rawResponsePreview   String?  // first ~4k chars of model output for debugging
+  parsedSourceCount    Int      @default(0)
+  errorMessage         String?
+  startedAt            DateTime?
+  completedAt          DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  candidates           SourceResearchCandidate[]
+
+  @@index([status, createdAt])
+}
+
+/// SacFam AI Source Agent — proposed source candidate from a research run.
+/// Awaits admin review before promotion to the operational EventSource table.
+model SourceResearchCandidate {
+  id                          String   @id @default(cuid())
+  runId                       String
+  sourceName                  String
+  sourceUrl                   String
+  normalizedUrl               String   // host + path, lowercased, tracking params stripped
+  sourceCategory              String
+  sourceType                  String
+  cityOrAreaServed            String?
+  countyOrRegion              String?
+  eventTypesJson              String   @default("[]") // JSON string array
+  familyRelevance             String   @default("")
+  whyUsefulForSacfamEvents    String   @default("")
+  estimatedUpdateFrequency    String?
+  freshnessLikelihood         String
+  automationFit               String
+  recommendedIngestionMethod  String
+  reviewPriority              String
+  relevanceScore              Float    @default(0)
+  deterministicScore          Float    @default(0)
+  verificationStatus          String
+  notes                       String?
+  duplicateOfSourceId         String?
+  importStatus                String   @default("pending_review") // pending_review | imported | duplicate | rejected | needs_verification
+  importedSourceId            String?
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+
+  run                         SourceResearchRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([runId, importStatus])
+  @@index([normalizedUrl])
+}
+
+/// SacFam AI Source Agent — monitor-run audit row. One row per
+/// invocation of the OpenAI-powered event monitor workflow.
+model EventMonitorRun {
+  id                    String   @id @default(cuid())
+  status                String   @default("pending") // pending | running | completed | failed
+  sourceId              String?
+  sourcesChecked        Int      @default(0)
+  newEventsFound        Int      @default(0)
+  updatedEventsFound    Int      @default(0)
+  eventsNeedingReview   Int      @default(0)
+  calendarReadyEvents   Int      @default(0)
+  model                 String
+  promptVersion         String
+  rawResponsePreview    String?
+  errorMessage          String?
+  startedAt             DateTime?
+  completedAt           DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  candidates            EventCandidate[]
+
+  @@index([status, createdAt])
+  @@index([sourceId, createdAt])
+}
+
+/// SacFam AI Source Agent — proposed event candidate from a monitor run.
+/// Admin review promotes approved candidates into FamilyEvent.
+model EventCandidate {
+  id                   String   @id @default(cuid())
+  monitorRunId         String
+  sourceId             String?
+  eventTitle           String
+  eventUrl             String?
+  sourceName           String
+  sourceUrl            String
+  eventDate            String?  // YYYY-MM-DD when known; stored as text to avoid TZ ambiguity
+  eventStartTime       String?
+  eventEndTime         String?
+  locationName         String?
+  streetAddress        String?
+  city                 String?
+  countyOrRegion       String?
+  eventCategory        String?
+  familyAgeRange       String?
+  cost                 String?
+  registrationRequired Boolean?
+  descriptionSummary   String   @default("")
+  whyRelevantForFamilies String @default("")
+  confidenceScore      Float    @default(0)
+  adminReviewRequired  Boolean  @default(true)
+  changeType           String   @default("needs_manual_review")
+  calendarReady        String   @default("needs_review")
+  missingFieldsJson    String   @default("[]") // JSON string array
+  notes                String?
+  reviewStatus         String   @default("pending") // pending | approved | rejected | needs_edit | duplicate
+  promotedFamilyEventId String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  monitorRun           EventMonitorRun @relation(fields: [monitorRunId], references: [id], onDelete: Cascade)
+
+  @@index([monitorRunId, reviewStatus])
+  @@index([sourceId, createdAt])
+  @@index([reviewStatus, createdAt])
 }
 

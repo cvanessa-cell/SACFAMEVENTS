@@ -2,6 +2,13 @@ import crypto from "node:crypto";
 
 import { prisma } from "@/lib/prisma";
 import { createEventExtractionJob } from "@/lib/openai/createEventExtractionJob";
+import { toFacebookEventsUrl } from "@/lib/events/facebookParser";
+import {
+  firecrawlFetch,
+  isFirecrawlConfigured,
+} from "@/lib/events/firecrawlFetcher";
+import { parseICal, icalEventsToText } from "@/lib/events/icalParser";
+import { parseRssFeed, rssItemsToText } from "@/lib/events/rssParser";
 import { notifySourceCheckFailure, notifySourceContentChanged } from "@/lib/slack/projectSignals";
 
 export function normalizeFetchedContent(raw: string): string {
@@ -18,17 +25,79 @@ export function stableHash(content: string): string {
   return crypto.createHash("sha256").update(content).digest("hex");
 }
 
-async function fetchSourceText(url: string, timeoutMs = 15000): Promise<{ text: string; status: number }> {
+async function fetchSourceText(
+  url: string,
+  options: { timeoutMs?: number } = {},
+): Promise<{ text: string; status: number }> {
+  const { timeoutMs = 15000 } = options;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const res = await fetch(url, {
       signal: controller.signal,
-      headers: { "User-Agent": "FamilyEventsMonitor/1.0 (+public-source-checker)" },
+      redirect: "follow",
+      headers: {
+        "User-Agent": "FamilyEventsMonitor/1.0 (+public-source-checker)",
+        "Accept-Language": "en-US,en;q=0.9",
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      },
     });
     return { text: await res.text(), status: res.status };
   } finally {
     clearTimeout(timer);
+  }
+}
+
+/**
+ * Fetches a source's content. For `facebook_public` and `firecrawl` strategies,
+ * uses the Firecrawl headless-browser API to render JS and bypass anti-bot
+ * defenses. For everything else, uses a plain fetch.
+ */
+async function fetchForStrategy(
+  sourceUrl: string,
+  fetchStrategy: string,
+): Promise<{ text: string; status: number }> {
+  if (fetchStrategy === "facebook_public") {
+    if (!isFirecrawlConfigured()) {
+      throw new Error(
+        "FIRECRAWL_API_KEY required for Facebook sources (Facebook blocks direct HTTP requests). Add the key in .env — see .env.example.",
+      );
+    }
+    const eventsUrl = toFacebookEventsUrl(sourceUrl) ?? sourceUrl;
+    const result = await firecrawlFetch(eventsUrl);
+    return { text: result.text, status: result.status };
+  }
+
+  if (fetchStrategy === "firecrawl") {
+    if (!isFirecrawlConfigured()) {
+      throw new Error(
+        "FIRECRAWL_API_KEY required for firecrawl-strategy sources.",
+      );
+    }
+    const result = await firecrawlFetch(sourceUrl);
+    return { text: result.text, status: result.status };
+  }
+
+  return fetchSourceText(sourceUrl);
+}
+
+function normalizeForStrategy(raw: string, fetchStrategy: string): string {
+  switch (fetchStrategy) {
+    case "rss_parse": {
+      const feed = parseRssFeed(raw);
+      return rssItemsToText(feed);
+    }
+    case "ical_parse": {
+      const cal = parseICal(raw);
+      return icalEventsToText(cal);
+    }
+    case "facebook_public":
+    case "firecrawl":
+      // Firecrawl already returns clean markdown — only collapse whitespace.
+      return raw.replace(/\s+/g, " ").trim();
+    default:
+      return normalizeFetchedContent(raw);
   }
 }
 
@@ -51,8 +120,11 @@ export async function checkSingleSource(sourceId: string) {
 
   const startedAt = new Date();
   try {
-    const { text, status } = await fetchSourceText(source.sourceUrl);
-    const normalized = normalizeFetchedContent(text);
+    const { text, status } = await fetchForStrategy(
+      source.sourceUrl,
+      source.fetchStrategy,
+    );
+    const normalized = normalizeForStrategy(text, source.fetchStrategy);
     const hash = stableHash(normalized);
     const changed = hash !== source.lastContentHash;
 

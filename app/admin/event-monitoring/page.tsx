@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import { runDiscoveryNowAction } from "@/app/admin/actions";
 import { prisma } from "@/lib/prisma";
 import { checkSupabaseReachability } from "@/lib/supabase/health";
 
@@ -26,14 +27,40 @@ export default async function EventMonitoringPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-3xl font-semibold">Event Monitoring</h1>
-      <p className="text-sm text-muted-foreground">OpenAI webhook + source change processing health overview.</p>
-      <ul className="space-y-2 text-sm">
-        <li>Total sources: {sourceCount}</li>
-        <li>Pending AI jobs: {pendingJobs}</li>
-        <li>Failed/incomplete AI jobs: {failedJobs}</li>
-        <li>Events needing review: {needsReview}</li>
-      </ul>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-semibold">Event monitoring</h1>
+          <p className="text-sm text-muted-foreground">
+            OpenAI webhook + source-change processing health overview.
+          </p>
+        </div>
+        <form action={runDiscoveryNowAction}>
+          <button
+            type="submit"
+            className="rounded-md border border-input bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
+          >
+            Run discovery now
+          </button>
+        </form>
+      </div>
+      <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-lg border p-3">
+          <div className="text-xs text-muted-foreground">Sources</div>
+          <div className="text-2xl font-semibold">{sourceCount}</div>
+        </div>
+        <div className="rounded-lg border p-3">
+          <div className="text-xs text-muted-foreground">Pending AI jobs</div>
+          <div className="text-2xl font-semibold">{pendingJobs}</div>
+        </div>
+        <div className="rounded-lg border p-3">
+          <div className="text-xs text-muted-foreground">Failed AI jobs</div>
+          <div className="text-2xl font-semibold">{failedJobs}</div>
+        </div>
+        <div className="rounded-lg border p-3">
+          <div className="text-xs text-muted-foreground">Needs review</div>
+          <div className="text-2xl font-semibold">{needsReview}</div>
+        </div>
+      </div>
       <div className="rounded border p-3 text-sm">
         <div className="font-medium">Supabase (optional)</div>
         <p className="mt-2 text-muted-foreground">

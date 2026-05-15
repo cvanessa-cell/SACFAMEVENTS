@@ -6,8 +6,9 @@ export default function SourcesPage() {
       <header>
         <h1 className="text-3xl font-semibold">Family Event Sources</h1>
         <p className="text-muted-foreground">
-          Data is authored in your Airtable base (table &quot;Family Event
-          Sources&quot;). This UI will load live rows in the next milestone.
+          Live data from your Airtable base (table &quot;Family Event
+          Sources&quot;). Mock rows render here when Airtable credentials are
+          missing or the API is unreachable.
         </p>
       </header>
       <SourceTable />

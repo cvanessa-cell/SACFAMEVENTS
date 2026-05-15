@@ -28,10 +28,26 @@ yarn-error.log*
 # local env files
 .env
 .env*.local
+.env.production
+.env.staging
+
+# databases
 /dev.db
 /prisma/dev.db
 *.db-journal
 /prisma/*.db-journal
+
+# helper scripts that may contain credentials (kept untracked locally)
+add-vercel-env.ps1
+run-db-push.bat
+run-env.bat
+trigger-redeploy.bat
+
+# credentials
+credentials.json
+*.key
+*.p12
+service-account*.json
 
 # vercel
 .vercel
@@ -39,3 +55,15 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# extension build output
+extension/chrome/dist/
+
+# IDE / editor
+.idea/
+.vscode/settings.json
+*.swp
+*.swo
+
+# OS
+Thumbs.db

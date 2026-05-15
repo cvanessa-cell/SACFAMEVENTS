@@ -1,0 +1,6 @@
+{
+  "name": "agent-conversation-indexer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local indexer for Cursor/agent conversations → Airtable"
+}

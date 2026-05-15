@@ -40,6 +40,7 @@ describe("upsertExtractedEvents", () => {
             confidence: 0.5,
             needs_human_review: true,
             reasoning_summary: "unclear date",
+            possible_existing_duplicate_key: null,
           },
         ],
         updated_events: [],

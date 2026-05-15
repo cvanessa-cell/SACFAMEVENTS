@@ -40,7 +40,7 @@ export function EventCard({
       : ev.startTime ?? "";
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden border-border/60 shadow-sm transition-shadow hover:shadow-md">
       <CardHeader className="space-y-2">
         <div className="flex items-start gap-3">
           <Checkbox

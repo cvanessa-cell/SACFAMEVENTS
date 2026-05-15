@@ -10,7 +10,33 @@
     },
     {
       "path": "/api/cron/process-openai-webhook-tasks",
-      "schedule": "0 12 * * *"
+      "schedule": "0 */4 * * *"
+    },
+    {
+      "path": "/api/cron/auto-review",
+      "schedule": "30 8 * * *"
     }
-  ]
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-XSS-Protection", "value": "1; mode=block" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+      ]
+    }
+  ],
+  "functions": {
+    "app/api/events/discover/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/cron/check-event-sources/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/webhooks/openai/route.ts": {
+      "maxDuration": 30
+    }
+  }
 }

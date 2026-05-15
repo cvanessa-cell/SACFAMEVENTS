@@ -1,7 +1,10 @@
-import { prisma } from "@/lib/prisma";
-import { getOpenAIClient } from "@/lib/openai/client";
+import { zodTextFormat } from "openai/helpers/zod";
 
-const extractionPrompt = `You are analyzing changed content from a public family-event source in the Sacramento / Placer region. Extract only real events that are kid-friendly or family-friendly. Return structured JSON only. Do not invent missing details. Use America/Los_Angeles timezone. Mark uncertain fields null and set needs_human_review=true. Detect new events, updated events, cancelled events, duplicates, and irrelevant/noise content.`;
+import { eventExtractionSchema } from "@/lib/events/eventExtractionSchema";
+import { getOpenAIClient } from "@/lib/openai/client";
+import { prisma } from "@/lib/prisma";
+
+const extractionPrompt = `You are analyzing changed content from a public family-event source in the Sacramento / Placer region. Extract only real events that are kid-friendly or family-friendly. Return structured JSON matching the provided schema. Do not invent missing details. Use America/Los_Angeles timezone. Mark uncertain fields null and set needs_human_review=true. Detect new events, updated events, cancelled events, duplicates, and irrelevant/noise content. Always populate every field — when unknown use null for nullable fields, an empty string for source_summary, and empty arrays for the list fields.`;
 
 export async function createEventExtractionJob(input: {
   sourceChangeId: string;
@@ -42,6 +45,9 @@ export async function createEventExtractionJob(input: {
         ],
       },
     ],
+    text: {
+      format: zodTextFormat(eventExtractionSchema, "event_extraction"),
+    },
   });
 
   const job = await prisma.aiEventExtractionJob.create({

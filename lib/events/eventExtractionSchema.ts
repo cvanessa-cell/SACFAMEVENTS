@@ -20,7 +20,7 @@ const extractedEventSchema = z.object({
   confidence: z.number().min(0).max(1),
   needs_human_review: z.boolean(),
   reasoning_summary: z.string(),
-  possible_existing_duplicate_key: z.string().nullable().optional(),
+  possible_existing_duplicate_key: z.string().nullable(),
 });
 
 export const eventExtractionSchema = z.object({

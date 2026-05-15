@@ -43,7 +43,7 @@ export function EventList({
         const bucket = groups.get(key) ?? [];
         return (
           <section key={key} className="space-y-4">
-            <h2 className="text-xl font-semibold tracking-tight">
+            <h2 className="border-b border-border/50 pb-2 text-xl font-semibold tracking-tight text-foreground">
               {groupLabel(key, groupMode)}
             </h2>
             <div className="grid gap-4 lg:grid-cols-2">

@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+
+import { GoogleAccountsCard } from "@/components/GoogleAccountsCard";
 import { SettingsPanel } from "@/components/SettingsPanel";
 
 export default function SettingsRoutePage() {
@@ -6,11 +9,13 @@ export default function SettingsRoutePage() {
       <header>
         <h1 className="text-3xl font-semibold">Settings &amp; automation</h1>
         <p className="max-w-3xl text-muted-foreground">
-          Configure reminders, scheduler cadence, and optional Zapier webhooks.
-          Values persist in SQLite (Prisma) on this machine; master event data stays
-          in Airtable.
+          Connect one or more Google accounts, pick a default calendar per
+          account, and configure scheduler cadence, auto-confirmation
+          thresholds, default reminders, and Zapier delivery. Values persist in
+          Postgres so cron jobs and API routes share the same source of truth.
         </p>
       </header>
+      <GoogleAccountsCard />
       <SettingsPanel />
     </div>
   );

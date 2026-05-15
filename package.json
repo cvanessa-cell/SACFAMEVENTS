@@ -18,11 +18,19 @@
     "scheduler:run": "tsx scripts/schedulerCli.ts",
     "test:calendar": "tsx scripts/testGoogleCalendarCreate.ts",
     "extension:build": "node scripts/extension-build.mjs",
+    "seed:demo": "tsx scripts/seed-demo-data.ts",
     "event-sources:seed": "tsx scripts/seed-event-sources.ts",
     "event-sources:check": "tsx scripts/check-event-sources.ts",
     "openai:webhook:process": "tsx scripts/process-openai-webhook-tasks.ts",
     "test:webhook": "tsx scripts/test-openai-webhook-local.ts",
-    "test:event-extraction": "tsx scripts/test-event-extraction.ts"
+    "test:event-extraction": "tsx scripts/test-event-extraction.ts",
+    "agent:indexer": "tsx agent-conversation-indexer/src/cli.ts",
+    "agent:index:doctor": "tsx agent-conversation-indexer/src/cli.ts doctor",
+    "agent:index:scan": "tsx agent-conversation-indexer/src/cli.ts scan --dry-run",
+    "agent:index:sync": "tsx agent-conversation-indexer/src/cli.ts sync",
+    "agent:index:report": "tsx agent-conversation-indexer/src/cli.ts report",
+    "agent:index:all": "tsx agent-conversation-indexer/src/cli.ts all --dry-run",
+    "agent:index:typecheck": "tsc -p agent-conversation-indexer/tsconfig.json"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
