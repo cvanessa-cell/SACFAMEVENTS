@@ -32,11 +32,8 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    ".next-public/types/**/*.ts",
-    ".next-public /types/**/*.ts",
-    ".next-admin /types/**/*.ts",
-    "node_modules/.cache/next-dist-admin/types/**/*.ts",
-    "node_modules/.cache/next-dist-admin /types/**/*.ts"
+    "node_modules/.cache/next-dist-public/types/**/*.ts",
+    "node_modules/.cache/next-dist-admin/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",

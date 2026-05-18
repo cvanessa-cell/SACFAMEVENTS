@@ -24,6 +24,7 @@
     "seed:demo": "tsx scripts/seed-demo-data.ts",
     "event-sources:seed": "tsx scripts/seed-event-sources.ts",
     "event-sources:check": "tsx scripts/check-event-sources.ts",
+    "check:db-stats": "tsx scripts/check-db-stats.ts",
     "openai:webhook:process": "tsx scripts/process-openai-webhook-tasks.ts",
     "test:webhook": "tsx scripts/test-openai-webhook-local.ts",
     "test:event-extraction": "tsx scripts/test-event-extraction.ts",

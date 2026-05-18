@@ -13,8 +13,11 @@
 /.next/
 /.next-public/
 /.next-admin/
+/.next-public /
+/.next-admin /
 node_modules/.cache/next-dist-public/
 node_modules/.cache/next-dist-admin/
+node_modules/.cache/next-dist-admin /
 /out/
 
 # production
