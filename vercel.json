@@ -10,11 +10,15 @@
     },
     {
       "path": "/api/cron/process-openai-webhook-tasks",
-      "schedule": "0 */4 * * *"
+      "schedule": "0 6 * * *"
     },
     {
       "path": "/api/cron/auto-review",
       "schedule": "30 8 * * *"
+    },
+    {
+      "path": "/api/cron/discover-web-events",
+      "schedule": "0 14 * * *"
     }
   ],
   "headers": [
@@ -33,6 +37,15 @@
       "maxDuration": 60
     },
     "app/api/cron/check-event-sources/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/cron/discover-web-events/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/admin/events/discover-web-daily/route.ts": {
+      "maxDuration": 60
+    },
+    "app/mcp/route.ts": {
       "maxDuration": 60
     },
     "app/api/webhooks/openai/route.ts": {

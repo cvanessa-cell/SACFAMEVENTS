@@ -21,6 +21,7 @@ Initial implementation of the OpenAI-powered source research and event monitorin
 - `lib/ai/schemas/eventMonitorSchema.ts` — Zod schema + enum constants for event monitor output
 - `lib/sources/sourceDeduplication.ts` — URL normalization + duplicate detection helpers
 - `lib/sources/sourceScoring.ts` — deterministic structural score in [0, 1]
+- `lib/sources/sourceAutoApproval.ts` — shared `> 0.5` auto-import rules for source and event candidates
 - `lib/sources/sourceResearchService.ts` — `runSourceResearch`, `approveSourceCandidate`, `rejectSourceCandidate`
 - `lib/sources/eventMonitorService.ts` — `runEventMonitorForSource`, `approveEventCandidate`, `rejectEventCandidate`
 
@@ -57,7 +58,8 @@ Initial implementation of the OpenAI-powered source research and event monitorin
 - `tests/sacfam-event-monitor-schema.test.ts` — 3 cases
 - `tests/sacfam-source-dedupe.test.ts` — 6 cases
 - `tests/sacfam-source-scoring.test.ts` — 4 cases
-- `tests/sacfam-source-research-service.test.ts` — 5 cases (flag off, dry-run, schema fail, approve dry-run, approve creates EventSource)
+- `tests/sacfam-source-research-service.test.ts` — flag off, dry-run, auto-import when score > 0.5, schema fail, manual approve paths
+- `tests/sacfam-source-auto-approval.test.ts` — 0.5 threshold for source `deterministicScore` and event `confidence_score`
 - `tests/sacfam-research-route-flag.test.ts` — 3 cases (unauthorized, key missing, flag off)
 
 ### Prisma migration
@@ -103,9 +105,9 @@ Reuses existing `OPENAI_API_KEY`, `OPENAI_MODEL`, `CRON_SECRET`, `EVENT_SOURCE_D
 | Model | Purpose |
 |-------|---------|
 | `SourceResearchRun` | Audit row per source-research invocation |
-| `SourceResearchCandidate` | Proposed source rows awaiting admin approval |
+| `SourceResearchCandidate` | Proposed source rows; high `deterministicScore` rows auto-import when dry-run is off |
 | `EventMonitorRun` | Audit row per event-monitor invocation |
-| `EventCandidate` | Proposed event rows awaiting admin approval |
+| `EventCandidate` | Proposed event rows; high `confidence_score` rows auto-promote when dry-run is off |
 
 Indexes added: `(status, createdAt)` on runs, `(runId, importStatus)` + `(normalizedUrl)` on source candidates, `(monitorRunId, reviewStatus)` + `(sourceId, createdAt)` + `(reviewStatus, createdAt)` on event candidates.
 
@@ -121,16 +123,16 @@ No existing models were modified.
 4. **Start dev**: `npm run dev` (port 3333).
 5. **Visit** `/admin/sources/research` and click **Run AI source research**. (If `ADMIN_PASSWORD` is set, sign in via HTTP Basic.)
 6. After the run completes, click **View** to see candidates.
-7. **Reject** at least one and **Approve** one (will fail with `dry_run_blocked` until you flip the flag).
-8. Set `SACFAM_SOURCE_AGENT_DRY_RUN=false` and restart; approve again — verify a new row appears in `/admin/event-sources`.
-9. Click **AI monitor** on a source; visit `/admin/events/candidates` to review the event candidates.
+7. **Reject** at least one low-scoring candidate manually.
+8. Set `SACFAM_SOURCE_AGENT_DRY_RUN=false` and restart; run research again — candidates with `deterministicScore > 0.5` should auto-import into `/admin/event-sources` without a manual approve click.
+9. Click **AI monitor** on a source; event rows with `confidence_score > 0.5` should auto-promote to `FamilyEvent` (`needs_review`); lower scores remain in `/admin/events/candidates`.
 
 ---
 
 ## What was skipped / out of scope
 
 - **OpenAI Responses tools (web_search, etc.)** — not enabled; the server fetches public URLs itself.
-- **Auto-import of high-confidence candidates** — intentionally not implemented; default is admin-only approval to satisfy "no verified fakes" acceptance criterion.
+- **Per-candidate auto-import disable flag** — not added; use `SACFAM_SOURCE_AGENT_DRY_RUN=true` to force manual review for all candidates.
 - **Dedup against existing `FamilyEvent` on event candidate promotion** — left to the existing review queue and `buildDuplicateKey` helper.
 - **Unifying Airtable display sources with Prisma catalog** — the `/api/sources` route still reads Airtable; out of scope here.
 - **Adding `npm run typecheck` script** — not added; the existing project relies on `npm run build` for type checking.
@@ -143,7 +145,8 @@ No existing models were modified.
 2. **OpenAI cost** — each research run consumes one large response (up to 125 structured candidates) and each monitor run consumes one moderate response. Monitor cost via OpenAI dashboards; consider lowering `SACFAM_SOURCE_AGENT_MAX_SOURCES` for daily testing.
 3. **`/api/admin/*` auth** still uses `CRON_SECRET` Bearer; the broader recommendation in the project plan is to align it with `ADMIN_PASSWORD` — left for a separate PR.
 4. **Prompts and structured schemas are versioned** (`PROMPT_VERSION` in each prompt module + saved on every run row). When tuning, bump the version and document the change here so audit trails stay coherent.
-5. **Approval of an event candidate creates a `FamilyEvent` with `status="needs_review"`**, so the existing review queue UI at `/admin/event-review` continues to be the source of truth before public exposure.
+5. **Auto-import uses a fixed `> 0.5` threshold** (`lib/sources/sourceAutoApproval.ts`): source candidates use `deterministicScore`; event candidates use model `confidence_score`. Duplicates and already-decided rows are skipped. Manual approve/reject still works.
+6. **Promotion of an event candidate creates a `FamilyEvent` with `status="needs_review"`**, so `/admin/event-review` remains the gate before public exposure even after auto-promotion.
 
 ---
 

@@ -10,7 +10,8 @@
  *   5. Mark run "completed" or "failed" with error message on rejection.
  *
  * IMPORTANT:
- * - Never auto-creates EventSource rows. Admin approval is required.
+ * - Auto-imports EventSource + Airtable catalog rows when deterministicScore > 0.5,
+ *   unless SACFAM_SOURCE_AGENT_DRY_RUN is enabled.
  * - Respects SACFAM_SOURCE_AGENT_MAX_SOURCES as the requested-count cap.
  * - Persists a preview of the raw model output for debugging (never the API key).
  */
@@ -48,6 +49,10 @@ import {
   findLikelyDuplicate,
   normalizeUrl,
 } from "@/lib/sources/sourceDeduplication";
+import {
+  AUTO_APPROVE_NOTE,
+  shouldAutoApproveSourceCandidate,
+} from "@/lib/sources/sourceAutoApproval";
 import { computeDeterministicSourceScore } from "@/lib/sources/sourceScoring";
 
 const RESPONSE_PREVIEW_LIMIT = 4000;
@@ -74,6 +79,7 @@ export type RunSourceResearchResult =
       invalidRecordCount: number;
       duplicateCount: number;
       savedCandidateCount: number;
+      autoApprovedCount: number;
       needsVerificationCount: number;
       dryRun: boolean;
       airtableEnabled: boolean;
@@ -333,6 +339,7 @@ export async function runSourceResearch(
     payload: SourceResearchCandidatePayload;
     duplicateOfSourceId: string | null;
     importStatus: string;
+    deterministicScore: number;
   }> = [];
 
   for (const c of candidatesToCreate) {
@@ -367,7 +374,36 @@ export async function runSourceResearch(
       payload: c.payload,
       duplicateOfSourceId: c.duplicateOfSourceId,
       importStatus: c.importStatus,
+      deterministicScore: c.deterministicScore,
     });
+  }
+
+  let autoApprovedCount = 0;
+  if (!config.dryRun) {
+    for (const candidate of createdPrismaCandidates) {
+      if (
+        !shouldAutoApproveSourceCandidate({
+          deterministicScore: candidate.deterministicScore,
+          importStatus: candidate.importStatus,
+          duplicateOfSourceId: candidate.duplicateOfSourceId,
+        })
+      ) {
+        continue;
+      }
+      const approval = await approveSourceCandidate({
+        candidateId: candidate.id,
+        note: AUTO_APPROVE_NOTE,
+      });
+      if (approval.ok) {
+        autoApprovedCount += 1;
+      } else {
+        logger.warn("Source candidate auto-approve skipped", "sacfam-source-research", {
+          candidateId: candidate.id,
+          reason: approval.reason,
+          message: approval.message,
+        });
+      }
+    }
   }
 
   let airtableMessage: string | undefined;
@@ -430,6 +466,7 @@ export async function runSourceResearch(
     invalidRecordCount: invalidRecordErrors.length,
     duplicateCount,
     savedCandidateCount: createdPrismaCandidates.length,
+    autoApprovedCount,
     needsVerificationCount,
     dryRun: config.dryRun,
     airtableEnabled: airtableRun.ok && !airtableMessage,
@@ -640,4 +677,7 @@ function safeJsonStringArray(value: string): string[] {
   }
 }
 
-export const __testing = { fetchStrategyForCandidate };
+export const __testing = {
+  fetchStrategyForCandidate,
+  shouldAutoApproveSourceCandidate,
+};

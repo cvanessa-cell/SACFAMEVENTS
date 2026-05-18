@@ -2,10 +2,9 @@
  * Event monitor service.
  *
  * Admin-triggered, synchronous OpenAI-powered event monitor for one EventSource.
- * Writes results to EventCandidate (staging) — NEVER directly to FamilyEvent.
- * This is intentionally parallel to and decoupled from the cron-driven
- * sourceChecker pipeline; promotion of approved candidates into FamilyEvent
- * happens via the approveEventCandidate function below.
+ * Writes results to EventCandidate (staging). When dry-run is off and
+ * confidence_score > 0.5, auto-promotes via approveEventCandidate; otherwise
+ * admins promote manually. Parallel to the cron-driven sourceChecker pipeline.
  */
 
 import { zodTextFormat } from "openai/helpers/zod";
@@ -20,6 +19,10 @@ import { checkEventMonitorAvailability } from "@/lib/ai/sacfamAgentEnv";
 import { eventMonitorSchema } from "@/lib/ai/schemas/eventMonitorSchema";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
+import {
+  AUTO_APPROVE_EVENT_NOTE,
+  shouldAutoApproveEventCandidate,
+} from "@/lib/sources/sourceAutoApproval";
 
 const RESPONSE_PREVIEW_LIMIT = 4000;
 const SNAPSHOT_TEXT_CAP = 120000;
@@ -59,6 +62,7 @@ export type RunEventMonitorResult =
       updatedEventsFound: number;
       eventsNeedingReview: number;
       calendarReadyEvents: number;
+      autoApprovedCount: number;
     }
   | {
       ok: false;
@@ -231,6 +235,35 @@ export async function runEventMonitorForSource(
     });
   }
 
+  let autoApprovedCount = 0;
+  if (!availability.config.dryRun && parsed.events.length > 0) {
+    const createdCandidates = await prisma.eventCandidate.findMany({
+      where: { monitorRunId: run.id },
+    });
+    for (const candidate of createdCandidates) {
+      if (
+        !shouldAutoApproveEventCandidate({
+          confidenceScore: candidate.confidenceScore,
+          reviewStatus: candidate.reviewStatus,
+        })
+      ) {
+        continue;
+      }
+      const approval = await approveEventCandidate(candidate.id, {
+        note: AUTO_APPROVE_EVENT_NOTE,
+      });
+      if (approval.ok) {
+        autoApprovedCount += 1;
+      } else {
+        logger.warn("Event candidate auto-approve skipped", "sacfam-event-monitor", {
+          candidateId: candidate.id,
+          reason: approval.reason,
+          message: approval.message,
+        });
+      }
+    }
+  }
+
   await prisma.eventMonitorRun.update({
     where: { id: run.id },
     data: {
@@ -253,6 +286,7 @@ export async function runEventMonitorForSource(
     updatedEventsFound: parsed.updated_events_found,
     eventsNeedingReview: parsed.events_needing_review,
     calendarReadyEvents: parsed.calendar_ready_events,
+    autoApprovedCount,
   };
 }
 

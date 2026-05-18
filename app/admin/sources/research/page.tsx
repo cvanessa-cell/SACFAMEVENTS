@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { ArrowUpRight, Bot, CheckCircle2, Clock3, Sparkles } from "lucide-react";
 
+import { OpenInAirtableLinks } from "@/components/admin/OpenInAirtableLinks";
 import { runSourceResearchAction } from "@/app/admin/sacfamAgentActions";
 import { RunSourceResearchForm } from "@/app/admin/sources/research/RunSourceResearchForm";
 import { Badge } from "@/components/ui/badge";
@@ -75,11 +76,13 @@ export default async function SourceResearchPage() {
               </div>
               <CardTitle className="text-2xl sm:text-3xl">Research New Family Event Sources</CardTitle>
               <CardDescription className="max-w-2xl text-sm sm:text-base">
-                Use the SacFam AI agent to find high-value local source candidates. Every result is
-                saved for review before it can be added to the live catalog.
+                Use the SacFam AI agent to find high-value local source candidates. Sources scoring
+                above 0.5 are auto-approved into the Airtable catalog and operational event-source
+                table after each run (when dry-run is off).
               </CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2">
+              <OpenInAirtableLinks table="sourceResearchRuns" showInterface />
               <Button asChild variant="outline" size="sm">
                 <Link href="/admin/sources/candidates">
                   Review candidates

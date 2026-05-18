@@ -1,3 +1,4 @@
+import { computeDayOfWeekForFamilyEvent } from "@/lib/eventLocation";
 import { familyEventSchema, type FamilyEvent } from "@/lib/validation";
 import { mapsLinkFromEventParts } from "@/lib/googleMaps";
 
@@ -134,56 +135,124 @@ function numField(v: unknown): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
+function fieldFirst(f: Record<string, unknown>, keys: string[]): string {
+  for (const key of keys) {
+    const v = strField(f[key]);
+    if (v) return v;
+  }
+  return "";
+}
+
+function categoryField(f: Record<string, unknown>): string {
+  const raw = f["Category Text"] ?? f.Category ?? f["Category"];
+  if (Array.isArray(raw)) {
+    return raw
+      .map((item) => {
+        if (typeof item === "string") return item;
+        if (item && typeof item === "object" && "name" in item) {
+          return strField((item as { name?: unknown }).name);
+        }
+        return "";
+      })
+      .filter(Boolean)
+      .join(", ");
+  }
+  return strField(raw);
+}
+
+function normalizeEventStatus(raw: string): FamilyEvent["status"] {
+  const trimmed = raw.trim();
+  if (trimmed === "Added to Google Calendar") return "Added to Calendar";
+  const statusParse = familyEventSchema.shape.status.safeParse(trimmed);
+  return statusParse.success ? statusParse.data : "Need Review";
+}
+
+function dateFromRecord(f: Record<string, unknown>): string {
+  const explicit = fieldFirst(f, ["Date", "Start Date"]);
+  if (explicit) return normalizeAirtableDate(explicit);
+
+  const startDateTime = fieldFirst(f, ["Start Date / Time"]);
+  if (startDateTime) return normalizeAirtableDate(startDateTime);
+
+  return "";
+}
+
+function timeFromDateTime(isoLike: string): string | undefined {
+  const d = new Date(isoLike);
+  if (Number.isNaN(d.getTime())) return undefined;
+  return d.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "America/Los_Angeles",
+  });
+}
+
 /** Map Airtable "Family Events" row to canonical FamilyEvent (Zod-checked). */
 export function mapAirtableEventRecord(
   record: AirtableRecord,
 ): FamilyEvent | null {
   const f = record.fields as Record<string, unknown>;
-  const eventName = strField(f["Event Name"]);
-  const dateRaw = strField(f["Date"]);
+  const eventName = fieldFirst(f, ["Event Name"]);
+  const dateRaw = dateFromRecord(f);
   if (!eventName || !dateRaw) return null;
 
-  const statusRaw = strField(f["Status"]) || "Need Review";
-  const statusParse = familyEventSchema.shape.status.safeParse(statusRaw);
+  const startDateTime = fieldFirst(f, ["Start Date / Time"]);
+  const endDateTime = fieldFirst(f, ["End Date / Time"]);
+  const statusRaw = fieldFirst(f, ["Status"]) || "Need Review";
 
   const event: FamilyEvent = {
     airtableRecordId: record.id,
     eventName,
-    date: normalizeAirtableDate(dateRaw),
-    startTime: strField(f["Start Time"]),
-    endTime: strField(f["End Time"]),
-    city: strField(f["City"]),
-    venue: strField(f["Venue"]),
-    address: strField(f["Address"]),
-    sourceName: strField(f["Source Name"]),
-    sourceType: strField(f["Source Type"]),
-    sourceLink: strField(f["Source Link"]),
-    eventLink: strField(f["Event Link"]),
-    ageRange: strField(f["Age Range"]),
-    cost: strField(f["Cost"]),
+    date: dateRaw,
+    dayOfWeek:
+      fieldFirst(f, ["Day of Week"]) ||
+      computeDayOfWeekForFamilyEvent(dateRaw),
+    startTime:
+      fieldFirst(f, ["Start Time", "Start Time Only"]) ||
+      (startDateTime ? timeFromDateTime(startDateTime) : ""),
+    endTime:
+      fieldFirst(f, ["End Time"]) ||
+      (endDateTime ? timeFromDateTime(endDateTime) : ""),
+    city: fieldFirst(f, ["City", "City / Area"]),
+    venue: fieldFirst(f, ["Venue", "Location Name", "Location / Venue Text"]),
+    address: fieldFirst(f, ["Address", "Street Address"]),
+    sourceName: fieldFirst(f, ["Source Name", "Source Name Text"]),
+    sourceType: fieldFirst(f, ["Source Type"]),
+    sourceLink: fieldFirst(f, ["Source Link", "Source URL"]),
+    eventLink: fieldFirst(f, ["Event Link", "Event URL"]),
+    ageRange: fieldFirst(f, ["Age Range"]),
+    cost: fieldFirst(f, ["Cost"]),
     free: boolField(f["Free?"]),
-    category: strField(f["Category"]),
-    categoryPrefix: strField((f["Category Prefix"] ?? f["Calendar Prefix"]) as unknown),
-    indoorOutdoor: strField(f["Indoor/Outdoor"]),
+    category: categoryField(f),
+    categoryPrefix: fieldFirst(f, [
+      "Category Prefix",
+      "Calendar Prefix",
+      "Google Calendar Title",
+    ]),
+    indoorOutdoor: fieldFirst(f, ["Indoor/Outdoor", "Indoor / Outdoor"]),
     recurring: boolField(f["Recurring?"]),
     registrationRequired: boolField(f["Registration Required?"]),
-    kidFriendlyNotes: strField(f["Kid-Friendly Notes"]),
-    description: strField(f["Description"]),
+    kidFriendlyNotes: fieldFirst(f, ["Kid-Friendly Notes"]),
+    description: fieldFirst(f, ["Description"]),
     screenshotUrl:
-      strField(f["Screenshot URL"]) || strField(f["Screenshot Attachment"]),
-    googleMapsLink: strField(f["Google Maps Link"]),
-    lastCheckedDate: strField(f["Last Checked Date"]),
-    status: statusParse.success ? statusParse.data : "Need Review",
-    addedToGoogleCalendar: boolField(f["Added to Google Calendar?"]),
-    googleCalendarEventId: strField(f["Google Calendar Event ID"]),
-    addedDate: strField(f["Added Date"]),
+      fieldFirst(f, ["Screenshot URL", "Screenshot Attachment"]),
+    googleMapsLink: fieldFirst(f, ["Google Maps Link", "Google Maps URL"]),
+    lastCheckedDate: fieldFirst(f, ["Last Checked Date", "Last Checked"]),
+    status: normalizeEventStatus(statusRaw),
+    addedToGoogleCalendar:
+      boolField(f["Added to Google Calendar?"]) ||
+      statusRaw === "Added to Google Calendar",
+    googleCalendarEventId: fieldFirst(f, [
+      "Google Calendar Event ID",
+    ]),
+    addedDate: fieldFirst(f, ["Added Date"]),
     confidenceScore: numField(f["Confidence Score"]),
-    duplicateGroupId: strField(f["Duplicate Group ID"]),
-    normalizedEventKey: strField(f["Normalized Event Key"]),
-    extractedRawText: strField(f["Extracted Raw Text"]),
+    duplicateGroupId: fieldFirst(f, ["Duplicate Group ID"]),
+    normalizedEventKey: fieldFirst(f, ["Normalized Event Key"]),
+    extractedRawText: fieldFirst(f, ["Extracted Raw Text"]),
     sourceReliabilityScore: numField(f["Source Reliability Score"]),
-    zapierWebhookStatus: strField(f["Zapier Webhook Status"]),
-    zapierLastSentAt: strField(f["Zapier Last Sent At"]),
+    zapierWebhookStatus: fieldFirst(f, ["Zapier Webhook Status"]),
+    zapierLastSentAt: fieldFirst(f, ["Zapier Last Sent At"]),
   };
 
   const parsed = familyEventSchema.safeParse(event);

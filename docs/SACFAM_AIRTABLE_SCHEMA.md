@@ -4,7 +4,16 @@ This document defines the Airtable base used by the OpenAI + Airtable source-res
 
 ## Base
 
-Base name: `SacFamEvents Source Database`
+Base name: `SacFamEvents Source Database` (optional display name in Airtable UI)
+
+Configured in this project on base ID `app0tfryJgq6BAUJJ` alongside the legacy `Family Event Sources` / `Family Events` tables.
+
+| Table | Table ID |
+| --- | --- |
+| Event Sources | `tblBJT4KAtUYKtV9I` |
+| Source Research Runs | `tblQ6kig948uYfdvU` |
+| Source Candidates | `tblmek2qKf6nmR8pJ` |
+| Event Candidates | `tblqAm11SlU9CK2nM` |
 
 ## Tables
 

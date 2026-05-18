@@ -1,10 +1,8 @@
 export const dynamic = "force-dynamic";
 
-import {
-  approveSourceCandidateAction,
-  rejectSourceCandidateAction,
-} from "@/app/admin/sacfamAgentActions";
 import { AlertCircle, CheckCircle2, Clock3, Layers3 } from "lucide-react";
+import { OpenInAirtableLinks } from "@/components/admin/OpenInAirtableLinks";
+import { SourceCandidatesTable } from "@/components/admin/SourceCandidatesTable";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,13 +24,6 @@ interface PageProps {
     automation?: string;
     duplicate?: string;
   };
-}
-
-function statusVariant(status?: string): "default" | "secondary" | "destructive" | "outline" {
-  if (status === "pending_review") return "default";
-  if (status === "imported") return "secondary";
-  if (status === "rejected" || status === "duplicate") return "destructive";
-  return "outline";
 }
 
 export default async function SourceCandidatesPage({ searchParams }: PageProps) {
@@ -79,8 +70,10 @@ export default async function SourceCandidatesPage({ searchParams }: PageProps) 
           <CardTitle className="text-2xl">Source candidate review</CardTitle>
           <CardDescription className="max-w-2xl">
             Triage AI-generated source candidates before approving them into the operational
-            source catalog. Dry-run mode blocks imports.
+            source catalog. Dry-run mode blocks imports. You can also review in the Airtable
+            Interface.
           </CardDescription>
+          <OpenInAirtableLinks table="sourceCandidates" />
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <div className="rounded-lg border border-border/60 bg-background/80 p-3">
@@ -158,6 +151,7 @@ export default async function SourceCandidatesPage({ searchParams }: PageProps) 
               <CardTitle>Candidates ({filtered.length} shown)</CardTitle>
               <CardDescription>
                 Filter by category, priority, verification, automation fit, or duplicate status.
+                Use Select all to approve or reject multiple candidates at once.
               </CardDescription>
             </div>
             <form className="grid gap-2 sm:grid-cols-5" action="/admin/sources/candidates" method="get">
@@ -182,92 +176,40 @@ export default async function SourceCandidatesPage({ searchParams }: PageProps) 
             </form>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto rounded-xl border border-border/60">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
-                    <th className="px-3 py-2.5">Source</th>
-                    <th className="px-3 py-2.5">Category</th>
-                    <th className="px-3 py-2.5">Area</th>
-                    <th className="px-3 py-2.5">Event types</th>
-                    <th className="px-3 py-2.5">Fit</th>
-                    <th className="px-3 py-2.5">Priority</th>
-                    <th className="px-3 py-2.5">Score</th>
-                    <th className="px-3 py-2.5">Status</th>
-                    <th className="px-3 py-2.5">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((record) => {
-                    const f = record.fields;
-                    const candidateId = f["Candidate ID"];
-                    const isDuplicate = Boolean(f["Duplicate Of"]) || f["Import Status"] === "duplicate";
-                    return (
-                      <tr key={record.id} className="border-b align-top transition-colors hover:bg-muted/20 last:border-b-0">
-                        <td className="max-w-xs px-3 py-2.5">
-                          <p className="font-medium">{f["Source Name"]}</p>
-                          <p className="text-xs text-muted-foreground">{f.Notes}</p>
-                          {f["Website / Social Link"] ? (
-                            <a
-                              href={f["Website / Social Link"]}
-                              className="text-xs text-primary underline"
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              Open Source URL
-                            </a>
-                          ) : null}
-                        </td>
-                        <td className="px-3 py-2.5">{f["Source Category"]}</td>
-                        <td className="px-3 py-2.5">{f["City / Area Served"]}</td>
-                        <td className="max-w-xs px-3 py-2.5">{f["Event Types"]}</td>
-                        <td className="px-3 py-2.5">{f["Automation Fit"]}</td>
-                        <td className="px-3 py-2.5">{f["Review Priority"]}</td>
-                        <td className="px-3 py-2.5">{f["Relevance Score"]}</td>
-                        <td className="px-3 py-2.5">
-                          <div className="flex flex-col gap-1">
-                            <Badge variant={statusVariant(f["Import Status"])}>
-                              {f["Import Status"]}
-                            </Badge>
-                            {isDuplicate ? (
-                              <span className="text-[11px] font-medium text-destructive">duplicate match</span>
-                            ) : null}
-                            <span className="text-xs text-muted-foreground">
-                              {f["Verification Status"]}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-3 py-2.5">
-                          <div className="flex flex-col gap-2">
-                            <form action={approveSourceCandidateAction}>
-                              <input type="hidden" name="candidateId" value={candidateId} />
-                              <Button
-                                type="submit"
-                                size="sm"
-                                disabled={!candidateId || config.dryRun || Boolean(f["Duplicate Of"])}
-                              >
-                                Approve
-                              </Button>
-                            </form>
-                            <form action={rejectSourceCandidateAction}>
-                              <input type="hidden" name="candidateId" value={candidateId} />
-                              <Button
-                                type="submit"
-                                size="sm"
-                                variant="outline"
-                                disabled={!candidateId}
-                              >
-                                Reject
-                              </Button>
-                            </form>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <SourceCandidatesTable
+              dryRun={config.dryRun}
+              rows={filtered.map((record) => {
+                const f = record.fields;
+                const candidateId = f["Candidate ID"] ?? null;
+                const isDuplicate =
+                  Boolean(f["Duplicate Of"]) || f["Import Status"] === "duplicate";
+                const importStatus = f["Import Status"];
+                const alreadyDecided =
+                  importStatus === "imported" ||
+                  importStatus === "rejected" ||
+                  importStatus === "duplicate";
+                return {
+                  recordId: record.id,
+                  candidateId,
+                  sourceName: f["Source Name"] ?? "—",
+                  notes: f.Notes,
+                  websiteUrl: f["Website / Social Link"],
+                  sourceCategory: f["Source Category"],
+                  cityOrArea: f["City / Area Served"],
+                  eventTypes: f["Event Types"],
+                  automationFit: f["Automation Fit"],
+                  reviewPriority: f["Review Priority"],
+                  relevanceScore: f["Relevance Score"],
+                  importStatus,
+                  verificationStatus: f["Verification Status"],
+                  isDuplicate,
+                  canApprove: Boolean(
+                    candidateId && !config.dryRun && !f["Duplicate Of"] && !alreadyDecided,
+                  ),
+                  canReject: Boolean(candidateId && !alreadyDecided),
+                };
+              })}
+            />
           </CardContent>
         </Card>
       )}

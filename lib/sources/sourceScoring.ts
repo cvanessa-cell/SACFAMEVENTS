@@ -2,7 +2,7 @@
  * Deterministic source scoring.
  *
  * Supplements the OpenAI-provided relevance_score with a transparent,
- * reproducible weighting. NEVER used as a sole auto-approval signal.
+ * reproducible weighting. Combined with public verification status for auto-approval.
  */
 
 import type {

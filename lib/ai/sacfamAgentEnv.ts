@@ -55,7 +55,7 @@ export function readSacfamAgentConfig(): SacfamAgentConfig {
     model: sourceResearchModel,
     sourceResearchModel,
     maxSources: parseInteger(process.env.SACFAM_SOURCE_AGENT_MAX_SOURCES, 125, 1, 500),
-    dryRun: parseBool(process.env.SACFAM_SOURCE_AGENT_DRY_RUN, true),
+    dryRun: parseBool(process.env.SACFAM_SOURCE_AGENT_DRY_RUN, false),
     airtableWriteEnabled: parseBool(process.env.SACFAM_AIRTABLE_WRITE_ENABLED, true),
     prismaMirrorEnabled: parseBool(process.env.SACFAM_SOURCE_RESEARCH_PRISMA_MIRROR, true),
     hasAirtableConfig:

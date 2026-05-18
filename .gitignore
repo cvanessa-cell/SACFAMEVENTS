@@ -11,6 +11,10 @@
 
 # next.js
 /.next/
+/.next-public/
+/.next-admin/
+node_modules/.cache/next-dist-public/
+node_modules/.cache/next-dist-admin/
 /out/
 
 # production
@@ -67,3 +71,5 @@ extension/chrome/dist/
 
 # OS
 Thumbs.db
+
+.vercel

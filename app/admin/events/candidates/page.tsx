@@ -2,11 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 
-import {
-  approveEventCandidateAction,
-  rejectEventCandidateAction,
-} from "@/app/admin/sacfamAgentActions";
-import { Badge } from "@/components/ui/badge";
+import { EventCandidatesList } from "@/components/admin/EventCandidatesList";
 import {
   Card,
   CardContent,
@@ -22,24 +18,6 @@ type ReviewFilter = (typeof REVIEW_FILTERS)[number];
 
 interface PageProps {
   searchParams?: { status?: string };
-}
-
-function reviewBadgeVariant(
-  s: string,
-): "default" | "secondary" | "destructive" | "outline" {
-  if (s === "approved") return "default";
-  if (s === "rejected") return "destructive";
-  if (s === "duplicate") return "outline";
-  return "secondary";
-}
-
-function changeTypeVariant(
-  s: string,
-): "default" | "secondary" | "destructive" | "outline" {
-  if (s === "new_event") return "default";
-  if (s === "canceled_event") return "destructive";
-  if (s === "needs_manual_review") return "secondary";
-  return "outline";
 }
 
 export default async function EventCandidatesPage({ searchParams }: PageProps) {
@@ -87,7 +65,8 @@ export default async function EventCandidatesPage({ searchParams }: PageProps) {
         <CardHeader>
           <CardTitle>AI event candidates</CardTitle>
           <CardDescription>
-            Approve to promote into the FamilyEvent table for the public site.{" "}
+            Approve to promote into the FamilyEvent table for the public site. Use Select all to
+            approve or reject multiple candidates at once.{" "}
             {config.dryRun
               ? "Dry-run is ON — approval is blocked until SACFAM_SOURCE_AGENT_DRY_RUN=false."
               : ""}
@@ -108,117 +87,51 @@ export default async function EventCandidatesPage({ searchParams }: PageProps) {
             ))}
           </div>
 
-          {candidates.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No candidates with this status.</p>
-          ) : (
-            <div className="space-y-3">
-              {candidates.map((c) => {
-                const missingFields: string[] = (() => {
-                  try {
-                    const parsed = JSON.parse(c.missingFieldsJson || "[]");
-                    return Array.isArray(parsed) ? parsed.map(String) : [];
-                  } catch {
-                    return [];
-                  }
-                })();
-                return (
-                  <div key={c.id} className="rounded-lg border bg-card p-4 shadow-sm">
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <p className="font-semibold">{c.eventTitle}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {c.sourceName}
-                          {c.eventUrl ? (
-                            <>
-                              {" · "}
-                              <a
-                                href={c.eventUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-primary underline"
-                              >
-                                event link
-                              </a>
-                            </>
-                          ) : null}
-                        </p>
-                      </div>
-                      <div className="flex flex-wrap gap-1">
-                        <Badge variant={reviewBadgeVariant(c.reviewStatus)}>
-                          {c.reviewStatus}
-                        </Badge>
-                        <Badge variant={changeTypeVariant(c.changeType)}>
-                          {c.changeType}
-                        </Badge>
-                        <Badge variant="outline">cal: {c.calendarReady}</Badge>
-                        <Badge variant="outline">
-                          conf {c.confidenceScore.toFixed(2)}
-                        </Badge>
-                        {c.adminReviewRequired ? (
-                          <Badge variant="secondary">admin review</Badge>
-                        ) : null}
-                      </div>
-                    </div>
-                    <div className="mt-2 grid gap-1 text-xs text-muted-foreground sm:grid-cols-2">
-                      <p>
-                        <span className="font-medium text-foreground">When:</span>{" "}
-                        {c.eventDate ?? "—"} {c.eventStartTime ?? ""}
-                      </p>
-                      <p>
-                        <span className="font-medium text-foreground">Where:</span>{" "}
-                        {[c.locationName, c.city, c.countyOrRegion].filter(Boolean).join(", ") || "—"}
-                      </p>
-                      <p>
-                        <span className="font-medium text-foreground">Audience:</span>{" "}
-                        {c.familyAgeRange ?? "—"}
-                      </p>
-                      <p>
-                        <span className="font-medium text-foreground">Cost:</span>{" "}
-                        {c.cost ?? "—"}
-                      </p>
-                    </div>
-                    {c.descriptionSummary ? (
-                      <p className="mt-2 text-sm">{c.descriptionSummary}</p>
-                    ) : null}
-                    {c.whyRelevantForFamilies ? (
-                      <p className="mt-1 text-xs italic text-muted-foreground">
-                        {c.whyRelevantForFamilies}
-                      </p>
-                    ) : null}
-                    {missingFields.length > 0 ? (
-                      <p className="mt-2 text-xs text-destructive">
-                        Missing: {missingFields.join(", ")}
-                      </p>
-                    ) : null}
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <form action={approveEventCandidateAction}>
-                        <input type="hidden" name="candidateId" value={c.id} />
-                        <button
-                          type="submit"
-                          disabled={c.reviewStatus === "approved" || c.reviewStatus === "rejected"}
-                          className="rounded-md border bg-primary px-3 py-1 text-xs font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          Approve & promote
-                        </button>
-                      </form>
-                      <form action={rejectEventCandidateAction}>
-                        <input type="hidden" name="candidateId" value={c.id} />
-                        <button
-                          type="submit"
-                          disabled={c.reviewStatus === "rejected"}
-                          className="rounded-md border px-3 py-1 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          Reject
-                        </button>
-                      </form>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          <EventCandidatesList
+            dryRun={config.dryRun}
+            candidates={candidates.map((c) => {
+              const missingFields: string[] = (() => {
+                try {
+                  const parsed = JSON.parse(c.missingFieldsJson || "[]");
+                  return Array.isArray(parsed) ? parsed.map(String) : [];
+                } catch {
+                  return [];
+                }
+              })();
+              return {
+                id: c.id,
+                eventTitle: c.eventTitle,
+                sourceName: c.sourceName,
+                eventUrl: c.eventUrl,
+                reviewStatus: c.reviewStatus,
+                changeType: c.changeType,
+                calendarReady: c.calendarReady,
+                confidenceScore: c.confidenceScore,
+                adminReviewRequired: c.adminReviewRequired,
+                eventDate: c.eventDate,
+                eventStartTime: c.eventStartTime,
+                locationName: c.locationName,
+                city: c.city,
+                countyOrRegion: c.countyOrRegion,
+                familyAgeRange: c.familyAgeRange,
+                cost: c.cost,
+                descriptionSummary: c.descriptionSummary,
+                whyRelevantForFamilies: c.whyRelevantForFamilies,
+                missingFields,
+                canApprove:
+                  c.reviewStatus !== "approved" &&
+                  c.reviewStatus !== "rejected" &&
+                  !config.dryRun,
+                canReject: c.reviewStatus !== "rejected",
+              };
+            })}
+          />
         </CardContent>
       </Card>
     </div>
   );
 }
+
+
+
+

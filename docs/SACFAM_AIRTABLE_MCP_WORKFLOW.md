@@ -10,6 +10,8 @@ Airtable MCP is for natural-language review and cleanup of the SacFamEvents sour
 
 MCP permissions mirror the connected Airtable user's permissions. Do not treat MCP as a privileged production write path unless the user intentionally grants that access.
 
+For building and sharing an Airtable Interface (review UI in Airtable), see [SACFAM_AIRTABLE_INTERFACE_SETUP.md](./SACFAM_AIRTABLE_INTERFACE_SETUP.md).
+
 ## Recommended MCP Uses
 
 - Review proposed sources by category, priority, verification status, and automation fit.

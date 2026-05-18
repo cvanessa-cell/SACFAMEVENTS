@@ -131,6 +131,22 @@ model DiscoveryRunLog {
   eventsUpserted Int   @default(0)
 }
 
+/// Persisted MCP / ChatGPT discover→save runs (serverless-safe; not in-memory).
+model OpenAiAppDiscoveryRun {
+  id            String   @id @default(cuid())
+  createdAt     DateTime @default(now())
+  expiresAt     DateTime
+  status        String   @default("pending") // pending | saved | expired
+  city          String?
+  lookaheadDays Int
+  limit         Int
+  dryRun        Boolean  @default(true)
+  startDate     String
+  endDate       String
+  candidatesJson Json
+  summaryJson   Json?
+}
+
 model ZapierWebhookLog {
   id                String   @id @default(cuid())
   createdAt         DateTime @default(now())

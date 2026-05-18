@@ -60,6 +60,7 @@ export const familyEventSchema = z.object({
   airtableRecordId: z.string().optional(),
   eventName: z.string().min(1),
   date: z.string().min(1),
+  dayOfWeek: z.string().optional(),
   startTime: z.string().optional(),
   endTime: z.string().optional(),
   city: z.string().optional(),

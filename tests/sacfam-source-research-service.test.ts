@@ -107,6 +107,46 @@ describe("runSourceResearch", () => {
       expect(result.dryRun).toBe(true);
       expect(result.parsedSourceCount).toBe(1);
       expect(result.savedCandidateCount).toBe(1);
+      expect(result.autoApprovedCount).toBe(0);
+    }
+  });
+
+  it("auto-imports public verified candidates when dry-run is off", async () => {
+    process.env.SACFAM_SOURCE_AGENT_DRY_RUN = "false";
+    mockPrisma.sourceResearchCandidate.findUnique.mockResolvedValue({
+      id: "cand_1",
+      sourceName: "Sacramento Public Library",
+      sourceUrl: "https://saclibrary.org/events",
+      sourceCategory: "Public Libraries",
+      sourceType: "official",
+      cityOrAreaServed: "Sacramento",
+      countyOrRegion: "Sacramento County",
+      eventTypesJson: "[]",
+      familyRelevance: "high",
+      whyUsefulForSacfamEvents: "county-wide kids programs",
+      estimatedUpdateFrequency: "weekly",
+      freshnessLikelihood: "high",
+      automationFit: "excellent",
+      recommendedIngestionMethod: "official_calendar_monitoring",
+      reviewPriority: "high",
+      relevanceScore: 9.2,
+      deterministicScore: 0.9,
+      verificationStatus: "verified",
+      notes: null,
+      duplicateOfSourceId: null,
+      importStatus: "needs_verification",
+      runId: "run_1",
+    });
+    mockPrisma.eventSource.findUnique.mockResolvedValue(null);
+    mockPrisma.eventSource.create.mockResolvedValue({ id: "src_new" });
+    mockPrisma.sourceResearchCandidate.update.mockResolvedValue({});
+
+    const { runSourceResearch } = await import("@/lib/sources/sourceResearchService");
+    const result = await runSourceResearch({ requestedSourceCount: 1 });
+    expect(result.ok).toBe(true);
+    expect(mockPrisma.eventSource.create).toHaveBeenCalled();
+    if (result.ok) {
+      expect(result.autoApprovedCount).toBe(1);
     }
   });
 

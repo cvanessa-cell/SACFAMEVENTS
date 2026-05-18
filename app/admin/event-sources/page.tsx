@@ -9,7 +9,9 @@ import {
   toggleSourceAction,
 } from "@/app/admin/actions";
 import { runEventMonitorAction } from "@/app/admin/sacfamAgentActions";
+import { GlossaryHint, GlossaryTitle } from "@/components/admin/GlossaryHint";
 import { readSacfamAgentConfig } from "@/lib/ai/sacfamAgentEnv";
+import { glossaryDefinition } from "@/lib/admin/operationsConsoleGlossary";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -149,25 +151,55 @@ export default async function EventSourcesAdminPage({
             on a schedule.
           </p>
         </div>
-        <form action={runDiscoveryNowAction}>
-          <button
-            type="submit"
-            className="rounded-md border border-input bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
-          >
-            Run discovery now
-          </button>
-        </form>
+        <div className="max-w-xs space-y-1">
+          <form action={runDiscoveryNowAction}>
+            <GlossaryTitle
+              term="Run discovery now"
+              definition={glossaryDefinition("monitoring-actions", "Run discovery now")}
+            >
+              <button
+                type="submit"
+                className="w-full rounded-md border border-input bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 sm:w-auto"
+              >
+                Run discovery now
+              </button>
+            </GlossaryTitle>
+          </form>
+          <GlossaryHint
+            term="Run discovery now"
+            definition={glossaryDefinition("monitoring-actions", "Run discovery now")}
+          />
+        </div>
       </header>
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <StatCard label="Total sources" value={totalCount} />
-        <StatCard label="Enabled" value={enabledCount} />
-        <StatCard label="Last status: failed" value={failedCount} tone="warn" />
-        <StatCard label="Due for check" value={dueCount} tone="info" />
+        <StatCard
+          label="Total sources"
+          value={totalCount}
+          definition={glossaryDefinition("source-stats", "Total sources")}
+        />
+        <StatCard
+          label="Enabled"
+          value={enabledCount}
+          definition={glossaryDefinition("source-stats", "Enabled")}
+        />
+        <StatCard
+          label="Last status: failed"
+          value={failedCount}
+          tone="warn"
+          definition={glossaryDefinition("source-stats", "Last status: failed")}
+        />
+        <StatCard
+          label="Due for check"
+          value={dueCount}
+          tone="info"
+          definition={glossaryDefinition("source-stats", "Due for check")}
+        />
         <StatCard
           label="Pending AI extraction"
           value={pendingChanges}
           tone="info"
+          definition={glossaryDefinition("source-stats", "Pending AI extraction")}
         />
       </section>
 
@@ -176,9 +208,17 @@ export default async function EventSourcesAdminPage({
           <div className="space-y-1">
             <CardTitle>Sources ({filtered.length} shown)</CardTitle>
             <CardDescription>
-              Click <strong>Check now</strong> to fetch + hash the URL
-              immediately and (if changed) enqueue an OpenAI extraction job.
+              Row actions and status badges are defined in the field guide above.
+              Hover buttons for a short tooltip; see badge definitions below the
+              filter.
             </CardDescription>
+            <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+              {(["Enabled", "Due", "changed", "Check now", "AI monitor"] as const).map(
+                (term) => (
+                  <GlossaryHint key={term} term={term} className="max-w-[14rem]" />
+                ),
+              )}
+            </div>
           </div>
           <form
             method="get"
@@ -209,6 +249,11 @@ export default async function EventSourcesAdminPage({
             >
               Apply
             </button>
+            <GlossaryHint
+              term={status}
+              definition={glossaryDefinition("source-filters", status)}
+              className="w-full basis-full sm:w-auto"
+            />
             {q || status !== "all" ? (
               <Link
                 href="/admin/event-sources"
@@ -269,17 +314,34 @@ export default async function EventSourcesAdminPage({
                       <td className="px-3 py-2">
                         <div className="flex flex-col gap-1">
                           <Badge
-                            variant={
-                              s.enabled ? "default" : "secondary"
+                            variant={s.enabled ? "default" : "secondary"}
+                            title={
+                              glossaryDefinition(
+                                "source-badges",
+                                s.enabled ? "Enabled" : "Disabled",
+                              ) ?? undefined
                             }
                           >
                             {s.enabled ? "Enabled" : "Disabled"}
                           </Badge>
-                          <Badge variant={statusVariant(s.lastStatus)}>
+                          <Badge
+                            variant={statusVariant(s.lastStatus)}
+                            title={
+                              glossaryDefinition(
+                                "source-badges",
+                                s.lastStatus ?? "never",
+                              ) ?? undefined
+                            }
+                          >
                             {s.lastStatus ?? "never"}
                           </Badge>
                           {isDue(s, now) ? (
-                            <Badge variant="outline">Due</Badge>
+                            <Badge
+                              variant="outline"
+                              title={glossaryDefinition("source-badges", "Due") ?? undefined}
+                            >
+                              Due
+                            </Badge>
                           ) : null}
                         </div>
                       </td>
@@ -299,12 +361,14 @@ export default async function EventSourcesAdminPage({
                               name="sourceId"
                               value={s.id}
                             />
-                            <button
-                              type="submit"
-                              className="rounded-md border border-input bg-background px-2 py-1 text-xs hover:bg-accent"
-                            >
-                              Check now
-                            </button>
+                            <GlossaryTitle term="Check now">
+                              <button
+                                type="submit"
+                                className="rounded-md border border-input bg-background px-2 py-1 text-xs hover:bg-accent"
+                              >
+                                Check now
+                              </button>
+                            </GlossaryTitle>
                           </form>
                           <form action={toggleSourceAction}>
                             <input
@@ -317,12 +381,14 @@ export default async function EventSourcesAdminPage({
                               name="enabled"
                               value={s.enabled ? "false" : "true"}
                             />
-                            <button
-                              type="submit"
-                              className="rounded-md border border-input bg-background px-2 py-1 text-xs hover:bg-accent"
-                            >
-                              {s.enabled ? "Disable" : "Enable"}
-                            </button>
+                            <GlossaryTitle term="Disable / Enable">
+                              <button
+                                type="submit"
+                                className="rounded-md border border-input bg-background px-2 py-1 text-xs hover:bg-accent"
+                              >
+                                {s.enabled ? "Disable" : "Enable"}
+                              </button>
+                            </GlossaryTitle>
                           </form>
                           {monitorAvailable ? (
                             <form action={runEventMonitorAction}>
@@ -331,13 +397,14 @@ export default async function EventSourcesAdminPage({
                                 name="sourceId"
                                 value={s.id}
                               />
-                              <button
-                                type="submit"
-                                className="rounded-md border border-input bg-background px-2 py-1 text-xs hover:bg-accent"
-                                title="Run on-demand AI event monitor for this source"
-                              >
-                                AI monitor
-                              </button>
+                              <GlossaryTitle term="AI monitor">
+                                <button
+                                  type="submit"
+                                  className="rounded-md border border-input bg-background px-2 py-1 text-xs hover:bg-accent"
+                                >
+                                  AI monitor
+                                </button>
+                              </GlossaryTitle>
                             </form>
                           ) : null}
                         </div>
@@ -356,9 +423,9 @@ export default async function EventSourcesAdminPage({
           <CardHeader>
             <CardTitle>Recent source changes</CardTitle>
             <CardDescription>
-              Hash changed since the last check; AI extraction enqueued
-              automatically.
+              Hash changed since the last check; AI extraction enqueued automatically.
             </CardDescription>
+            <GlossaryHint term="changed" className="mt-1" />
           </CardHeader>
           <CardContent className="space-y-3">
             {recentChanges.length === 0 ? (
@@ -384,12 +451,14 @@ export default async function EventSourcesAdminPage({
                         name="sourceChangeId"
                         value={c.id}
                       />
-                      <button
-                        type="submit"
-                        className="rounded-md border border-input bg-background px-2 py-1 text-xs hover:bg-accent"
-                      >
-                        Retry AI
-                      </button>
+                      <GlossaryTitle term="Retry AI">
+                        <button
+                          type="submit"
+                          className="rounded-md border border-input bg-background px-2 py-1 text-xs hover:bg-accent"
+                        >
+                          Retry AI
+                        </button>
+                      </GlossaryTitle>
                     </form>
                   </div>
                   {c.changedTextExcerpt ? (
@@ -463,10 +532,12 @@ function StatCard({
   label,
   value,
   tone = "neutral",
+  definition,
 }: {
   label: string;
   value: number;
   tone?: "neutral" | "warn" | "info";
+  definition?: string;
 }) {
   const accent =
     tone === "warn"
@@ -479,6 +550,13 @@ function StatCard({
       <div className="text-xs uppercase tracking-wide text-muted-foreground">
         {label}
       </div>
+      {definition ? (
+        <GlossaryHint
+          term={label}
+          definition={definition}
+          className="mb-2 mt-0.5 normal-case"
+        />
+      ) : null}
       <div className={`text-2xl font-semibold ${accent}`}>{value}</div>
     </div>
   );

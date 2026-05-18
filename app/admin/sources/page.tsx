@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 
+import { OpenInAirtableLinks } from "@/components/admin/OpenInAirtableLinks";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -54,6 +55,7 @@ export default async function AirtableSourcesPage({ searchParams }: PageProps) {
           Approved source records in the SacFamEvents Airtable source database.
           Operational monitoring still uses the Prisma event-source table.
         </p>
+        <OpenInAirtableLinks table="eventSources" />
       </header>
 
       <Card>

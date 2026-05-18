@@ -1,19 +1,21 @@
-/**
- * Builds a Google Maps search URL suitable for calendars and browsers.
- */
-export function buildGoogleMapsSearchUrl(query: string): string {
-  const q = query.trim();
-  if (!q) return "";
-  const encoded = encodeURIComponent(q);
-  return `https://www.google.com/maps/search/?api=1&query=${encoded}`;
-}
+import {
+  buildGoogleMapsLocationQuery,
+  buildGoogleMapsSearchUrl,
+  buildGoogleMapsUrlFromParts,
+} from "@/lib/eventLocation";
+
+export { buildGoogleMapsSearchUrl, buildGoogleMapsLocationQuery, buildGoogleMapsUrlFromParts };
 
 export function mapsLinkFromEventParts(parts: {
   address?: string;
   venue?: string;
   city?: string;
+  region?: string;
 }): string {
-  const line = [parts.address, parts.venue, parts.city].filter(Boolean).join(" ");
-  if (!line.trim()) return "";
-  return buildGoogleMapsSearchUrl(line);
+  return buildGoogleMapsUrlFromParts({
+    street_address: parts.address,
+    location_name: parts.venue,
+    city: parts.city,
+    region: parts.region,
+  });
 }

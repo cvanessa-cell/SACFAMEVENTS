@@ -9,9 +9,8 @@ This workflow helps SacFamEvents build and review a high-quality source database
 3. Valid source candidates are deduplicated against existing Prisma and Airtable sources.
 4. Candidates are saved to Prisma as a local audit mirror and to Airtable `Source Candidates` when Airtable writes are enabled.
 5. Admins review candidates in `/admin/sources/candidates`.
-6. Approval promotes a candidate into Prisma `EventSource` and Airtable `Event Sources`.
-
-The workflow never auto-approves candidates by default.
+6. High-scoring candidates auto-import when `SACFAM_SOURCE_AGENT_DRY_RUN=false` (`deterministicScore > 0.5` for sources; `confidence_score > 0.5` for event-monitor events). Lower scores stay in the review queues for manual approve/reject.
+7. Manual approval still promotes any remaining candidate into Prisma `EventSource` / `FamilyEvent` and Airtable `Event Sources`.
 
 ## Required Environment Variables
 
@@ -87,7 +86,7 @@ Open `/admin/sources/candidates`. Filter by category, review priority, verificat
 
 Actions:
 
-- Approve: blocked while `SACFAM_SOURCE_AGENT_DRY_RUN=true`.
+- Approve: imports into the production catalog; blocked while `SACFAM_SOURCE_AGENT_DRY_RUN=true`. Not required when auto-import already ran for scores above 0.5.
 - Reject: marks the candidate rejected in Prisma and Airtable.
 - Open Source URL: manual verification.
 
@@ -99,9 +98,9 @@ Open `/admin/sources` to view Airtable `Event Sources`. The default view shows a
 
 When `SACFAM_SOURCE_AGENT_DRY_RUN=true`:
 
-- Research runs still save candidates.
+- Research and event-monitor runs still save candidates.
 - Candidates remain proposed or pending review.
-- Approval/import into Prisma `EventSource` and Airtable `Event Sources` is blocked.
+- Auto-import and manual approval/import into Prisma `EventSource`, Airtable `Event Sources`, and `FamilyEvent` are blocked.
 
 ## Safety and Privacy Limits
 

@@ -71,7 +71,8 @@ export function RunSourceResearchForm({
       <SubmitButton />
       </div>
       <p className="mt-3 text-xs text-muted-foreground">
-        Runs save candidate sources for admin review only. No auto-import happens here.
+        After each run, candidates with a deterministic score above 0.5 are auto-approved
+        into the live catalog (Prisma + Airtable) unless dry-run is enabled.
       </p>
     </form>
   );

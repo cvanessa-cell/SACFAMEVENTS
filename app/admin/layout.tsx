@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 
+import { OperationsConsoleGuide } from "@/components/admin/OperationsConsoleGuide";
 import { GoogleAuthWidget } from "@/components/GoogleAuthWidget";
 import { LayoutShell } from "@/components/layout-shell";
 
@@ -24,7 +25,11 @@ export default function AdminLayout({
         </Suspense>
       }
     >
-      {children}
+      <div className="space-y-6">
+        <OperationsConsoleGuide />
+        {children}
+      </div>
     </LayoutShell>
   );
 }
+

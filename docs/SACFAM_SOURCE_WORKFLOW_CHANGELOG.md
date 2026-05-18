@@ -28,7 +28,9 @@
 - `lib/ai/schemas/eventMonitorSchema.ts`
 - `lib/sources/sourceDeduplication.ts`
 - `lib/sources/sourceScoring.ts`
+- `lib/sources/sourceAutoApproval.ts`
 - `lib/sources/sourceResearchService.ts`
+- `lib/sources/eventMonitorService.ts`
 - `app/admin/sacfamAgentActions.ts`
 - `components/layout-shell.tsx`
 - `tests/sacfam-source-research-schema.test.ts`
@@ -36,6 +38,21 @@
 - `tests/sacfam-source-dedupe.test.ts`
 - `tests/sacfam-source-research-service.test.ts`
 - `tests/sacfam-research-route-flag.test.ts`
+- `tests/sacfam-source-auto-approval.test.ts`
+
+## Auto-import policy (deterministic score > 0.5)
+
+When `SACFAM_SOURCE_AGENT_DRY_RUN=false`, source research **does not require manual admin approval** for every candidate. After each run, the server auto-imports eligible **source candidates** into Prisma `EventSource` and Airtable `Event Sources` when:
+
+- `deterministicScore > 0.5` (strictly greater than `AUTO_APPROVE_DETERMINISTIC_SCORE_THRESHOLD` in `lib/sources/sourceAutoApproval.ts`)
+- the candidate is not a duplicate (`duplicateOfSourceId` is null)
+- `importStatus` is not already `rejected`, `duplicate`, or `imported`
+
+Lower-scoring or duplicate candidates remain in `Source Candidates` for manual review in `/admin/sources/candidates`. Manual approve/reject actions still work for any row.
+
+**Event candidates** from the AI event monitor auto-promote to `FamilyEvent` (status `needs_review`) when `confidence_score > 0.5`, using the same threshold constant, `SACFAM_SOURCE_AGENT_DRY_RUN=false`, and `reviewStatus` not already `approved` / `rejected` / `duplicate`. Lower-confidence events remain in `/admin/events/candidates` for manual review.
+
+Dry-run (`SACFAM_SOURCE_AGENT_DRY_RUN=true`) disables all auto-import and manual approval into the production source catalog.
 
 ## API Routes Added
 
@@ -60,7 +77,8 @@
 - Deduplication includes `Duplicate Check Key`.
 - Scoring normalizes 1-10 AI relevance scores.
 - Airtable source candidate writes are tested for 10-record batching.
-- Source research service tests were updated for per-candidate creates and richer summaries.
+- Source research service tests were updated for per-candidate creates, richer summaries, and auto-import when `deterministicScore > 0.5` and dry-run is off.
+- `tests/sacfam-source-auto-approval.test.ts` covers the 0.5 threshold, duplicate rejection, and already-decided import statuses.
 
 ## Commands Run
 
@@ -71,7 +89,7 @@
 ## Skipped Features
 
 - No Airtable MCP production write path was added. MCP remains documented for human review only.
-- No auto-import flag was added. Admin approval remains required.
+- No separate env flag to disable auto-import while leaving dry-run off; auto-import is controlled by `SACFAM_SOURCE_AGENT_DRY_RUN` and the fixed `> 0.5` deterministic threshold.
 - No migration was added. The Airtable workflow is additive and server-side.
 
 ## Follow-Up Recommendations

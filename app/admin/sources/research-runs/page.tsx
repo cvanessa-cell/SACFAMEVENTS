@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { Activity, CheckCircle2, Clock3, XCircle } from "lucide-react";
 
+import { OpenInAirtableLinks } from "@/components/admin/OpenInAirtableLinks";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,6 +41,7 @@ export default async function ResearchRunsPage() {
         <CardHeader>
           <CardTitle className="text-2xl">Source research runs</CardTitle>
           <CardDescription>Audit trail of every AI source-research invocation.</CardDescription>
+          <OpenInAirtableLinks table="sourceResearchRuns" showInterface />
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-lg border border-border/60 bg-background/80 p-3">

@@ -13,6 +13,7 @@ import type { PeriodPreset } from "@/lib/dateRangePresets";
 import { rangeForPreset } from "@/lib/dateRangePresets";
 import { EventFilters } from "@/components/EventFilters";
 import { EventList } from "@/components/EventList";
+import { EventsCalendarView } from "@/components/EventsCalendarView";
 import type { EventFiltersState } from "@/lib/eventFiltersState";
 import { defaultEventFilters } from "@/lib/eventFiltersState";
 import { applyEventFilters } from "@/lib/filterEvents";
@@ -21,7 +22,6 @@ import type { FamilyEvent } from "@/lib/validation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -70,6 +70,7 @@ export function EventsExplorer() {
   }));
 
   const [groupMode, setGroupMode] = React.useState<GroupMode>("day");
+  const [viewMode, setViewMode] = React.useState<"list" | "calendar">("list");
 
   const [selected, setSelected] = React.useState<Set<string>>(new Set());
 
@@ -164,6 +165,28 @@ export function EventsExplorer() {
       <section className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <h2 className="text-lg font-medium">When</h2>
+          <div className="flex flex-wrap gap-2">
+            <div className="inline-flex rounded-lg border bg-muted p-1 text-sm shadow-sm">
+              <Button
+                type="button"
+                variant={viewMode === "list" ? "default" : "ghost"}
+                size="sm"
+                className="px-4"
+                onClick={() => setViewMode("list")}
+              >
+                Grid / list
+              </Button>
+              <Button
+                type="button"
+                variant={viewMode === "calendar" ? "default" : "ghost"}
+                size="sm"
+                className="px-4"
+                onClick={() => setViewMode("calendar")}
+              >
+                Calendar
+              </Button>
+            </div>
+            {viewMode === "list" ? (
           <div className="inline-flex rounded-lg border bg-muted p-1 text-sm shadow-sm">
             {(["day", "week", "month"] satisfies GroupMode[]).map((m) => (
               <Button
@@ -177,6 +200,8 @@ export function EventsExplorer() {
                 {m === "day" ? "By day" : m === "week" ? "By week" : "By month"}
               </Button>
             ))}
+          </div>
+            ) : null}
           </div>
         </div>
         <DateRangeSelector
@@ -222,6 +247,8 @@ export function EventsExplorer() {
         <p className="text-muted-foreground">
           No events in this window. Expand the date range or clear filters.
         </p>
+      ) : viewMode === "calendar" ? (
+        <EventsCalendarView events={filtered} />
       ) : (
         <EventList
           events={filtered}

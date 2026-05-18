@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { useUIConfig } from "@/components/ui-config-provider";
+import { glossaryDefinitionAny } from "@/lib/admin/operationsConsoleGlossary";
 import { cn } from "@/lib/utils";
 
 const MAX_WIDTH_CLASSES: Record<string, string> = {
@@ -38,6 +39,7 @@ const ADMIN_NAV = [
   { href: "/admin/sources/candidates", label: "Source candidates" },
   { href: "/admin/event-review", label: "Review queue" },
   { href: "/admin/events/candidates", label: "AI event candidates" },
+  { href: "/admin/events/web-discovery", label: "Web discovery" },
   { href: "/events", label: "\u2190 Back to dashboard" },
 ];
 
@@ -101,18 +103,23 @@ export function LayoutShell({
           {/* Desktop nav */}
           <div className="hidden items-center gap-4 md:flex">
             <nav className="flex flex-wrap gap-2 text-sm font-medium">
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  className={cn(
-                    "rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
-                    isActive(item.href) && "bg-primary/10 text-primary",
-                  )}
-                  href={item.href}
-                >
-                  {item.label}
-                </Link>
-              ))}
+              {navItems.map((item) => {
+                const navHint =
+                  navMode === "admin" ? glossaryDefinitionAny(item.label) : undefined;
+                return (
+                  <Link
+                    key={item.href}
+                    className={cn(
+                      "rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+                      isActive(item.href) && "bg-primary/10 text-primary",
+                    )}
+                    href={item.href}
+                    title={navHint}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
             </nav>
             {authSlot}
           </div>
@@ -122,19 +129,24 @@ export function LayoutShell({
         {mobileMenuOpen && (
           <div className={`mx-auto ${maxW} border-t px-3 pb-3 md:hidden`}>
             <nav className="flex flex-col gap-2 pt-2 text-sm font-medium">
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  className={cn(
-                    "rounded-md px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground",
-                    isActive(item.href) && "bg-primary/10 text-primary",
-                  )}
-                  href={item.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  {item.label}
-                </Link>
-              ))}
+              {navItems.map((item) => {
+                const navHint =
+                  navMode === "admin" ? glossaryDefinitionAny(item.label) : undefined;
+                return (
+                  <Link
+                    key={item.href}
+                    className={cn(
+                      "rounded-md px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground",
+                      isActive(item.href) && "bg-primary/10 text-primary",
+                    )}
+                    href={item.href}
+                    title={navHint}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
             </nav>
             <div className="mt-2 border-t pt-2">{authSlot}</div>
           </div>
