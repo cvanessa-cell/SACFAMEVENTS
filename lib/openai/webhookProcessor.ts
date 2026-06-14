@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getOpenAIClient } from "@/lib/openai/client";
-import { eventExtractionSchema } from "@/lib/events/eventExtractionSchema";
+import { normalizeEventExtractionPayload } from "@/lib/events/normalizeEventExtractionPayload";
 import { upsertExtractedEvents } from "@/lib/events/upsertExtractedEvents";
 import { notifyOpenAIWebhookIssue } from "@/lib/slack/projectSignals";
 
@@ -91,7 +91,7 @@ async function handleVerifiedEvent(event: { type?: string; data?: { id?: string 
     const fullResponse = (await client.responses.retrieve(responseId)) as OpenAIResponseShape;
     const rawText = extractOutputText(fullResponse);
     const parsedRaw = JSON.parse(rawText);
-    const parsed = eventExtractionSchema.parse(parsedRaw);
+    const parsed = normalizeEventExtractionPayload(parsedRaw);
 
     await upsertExtractedEvents({
       source: job.sourceChange.source,
@@ -123,7 +123,7 @@ async function handleVerifiedEvent(event: { type?: string; data?: { id?: string 
       openaiResponseId: responseId,
       details,
     });
-    return { ok: false, status: 500, message: "Completed event processing failed" };
+    return { ok: false, status: 500, message: details };
   }
 }
 
@@ -153,5 +153,9 @@ export async function verifyOpenAIWebhook(rawBody: string, headers: HeaderBag) {
 }
 
 export async function processOpenAIWebhookTaskEvent(event: { type?: string; data?: { id?: string } }) {
-  return handleVerifiedEvent(event);
+  const result = await handleVerifiedEvent(event);
+  if (!result.ok) {
+    throw new Error(result.message ?? "Webhook task processing failed");
+  }
+  return result;
 }

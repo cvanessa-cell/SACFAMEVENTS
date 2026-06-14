@@ -1,13 +1,15 @@
 import type { EventSource, SourceChange } from "@prisma/client";
 
+import { buildDuplicateKey, likelyDuplicateWhere } from "@/lib/events/dedupeEvents";
+import { parseEventDatetime } from "@/lib/events/parseEventDatetime";
 import { prisma } from "@/lib/prisma";
 import type { EventExtractionResult } from "@/lib/events/eventExtractionSchema";
-import { buildDuplicateKey, likelyDuplicateWhere } from "@/lib/events/dedupeEvents";
 
-function parseDate(v: string | null): Date | null {
-  if (!v) return null;
-  const d = new Date(v);
-  return Number.isNaN(d.getTime()) ? null : d;
+function parseStoredDate(
+  v: string | null,
+  timezone: string,
+): Date | null {
+  return parseEventDatetime(v, timezone);
 }
 
 export async function upsertExtractedEvents(input: {
@@ -17,8 +19,9 @@ export async function upsertExtractedEvents(input: {
   autoApproveConfidence: number;
 }) {
   for (const ev of [...input.parsed.new_events, ...input.parsed.updated_events]) {
-    const start = parseDate(ev.start_datetime);
-    const end = parseDate(ev.end_datetime);
+    const tz = ev.timezone || "America/Los_Angeles";
+    const start = parseStoredDate(ev.start_datetime, tz);
+    const end = parseStoredDate(ev.end_datetime, tz);
     const duplicateKey = buildDuplicateKey({
       title: ev.title,
       date: start,
@@ -73,7 +76,7 @@ export async function upsertExtractedEvents(input: {
   }
 
   for (const ev of input.parsed.cancelled_events) {
-    const start = parseDate(ev.start_datetime);
+    const start = parseStoredDate(ev.start_datetime, ev.timezone || "America/Los_Angeles");
     const existing = await prisma.familyEvent.findFirst({
       where: likelyDuplicateWhere({
         title: ev.title,

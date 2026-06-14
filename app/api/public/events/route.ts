@@ -1,14 +1,31 @@
 import { NextResponse } from "next/server";
 
+import {
+  fetchFamilyEventsFromAirtable,
+  isAirtableConfigured,
+} from "@/lib/airtable";
+import {
+  filterUpcomingPublicEvents,
+  getTodayPacificYmd,
+  mapFamilyEventToPublicEvent,
+  mapPostgresRowToPublicEvent,
+  mergePublicEvents,
+  startOfTodayPacific,
+} from "@/lib/events/publicEvents";
 import { prisma } from "@/lib/prisma";
 
-const EXCLUDED_STATUSES = ["rejected", "duplicate", "cancelled"];
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
+    const todayStart = startOfTodayPacific();
+    const todayYmd = getTodayPacificYmd();
+
     const rows = await prisma.familyEvent.findMany({
       where: {
-        status: { notIn: EXCLUDED_STATUSES },
+        status: "approved",
+        startDatetime: { gte: todayStart },
+        sourceEventUrl: { not: null },
       },
       orderBy: { startDatetime: "asc" },
       select: {
@@ -34,46 +51,34 @@ export async function GET() {
       take: 500,
     });
 
-    const events = rows.map((r) => ({
-      id: r.id,
-      eventName: r.title,
-      description: r.description,
-      eventLink: r.sourceEventUrl,
-      city: r.city,
-      county: r.county,
-      venue: r.venueName,
-      address: r.address,
-      date: r.startDatetime
-        ? r.startDatetime.toISOString().slice(0, 10)
-        : "",
-      startTime: r.startDatetime
-        ? r.startDatetime.toLocaleTimeString("en-US", {
-            hour: "numeric",
-            minute: "2-digit",
-            timeZone: r.timezone || "America/Los_Angeles",
-          })
-        : undefined,
-      endTime: r.endDatetime
-        ? r.endDatetime.toLocaleTimeString("en-US", {
-            hour: "numeric",
-            minute: "2-digit",
-            timeZone: r.timezone || "America/Los_Angeles",
-          })
-        : undefined,
-      ageRange: r.ageRange,
-      cost: r.priceText,
-      free: r.priceText
-        ? /free|no cost|\$0/i.test(r.priceText)
-        : undefined,
-      category: r.source?.category ?? undefined,
-      sourceName: r.source?.name ?? undefined,
-      registrationRequired: Boolean(r.registrationUrl),
-      registrationUrl: r.registrationUrl,
-      confidence: r.confidence,
-      status: r.status,
-    }));
+    const postgresEvents = rows
+      .map((row) => mapPostgresRowToPublicEvent(row))
+      .filter((ev): ev is NonNullable<typeof ev> => ev !== null);
 
-    return NextResponse.json({ events, count: events.length });
+    let airtableEvents: ReturnType<typeof mapFamilyEventToPublicEvent>[] = [];
+    if (isAirtableConfigured()) {
+      try {
+        const airtableRows = await fetchFamilyEventsFromAirtable();
+        airtableEvents = airtableRows
+          .map((row) => mapFamilyEventToPublicEvent(row))
+          .filter((ev): ev is NonNullable<typeof ev> => ev !== null);
+        airtableEvents = filterUpcomingPublicEvents(airtableEvents, todayYmd);
+      } catch (err) {
+        console.warn("Public events: Airtable fetch failed, using Postgres only:", err);
+      }
+    }
+
+    const events = mergePublicEvents(postgresEvents, airtableEvents);
+
+    return NextResponse.json({
+      events,
+      count: events.length,
+      sources: {
+        postgres: postgresEvents.length,
+        airtable: airtableEvents.length,
+        merged: events.length,
+      },
+    });
   } catch (err) {
     console.error("Public events API error:", err);
     return NextResponse.json(

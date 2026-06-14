@@ -163,6 +163,7 @@ function categoryField(f: Record<string, unknown>): string {
 function normalizeEventStatus(raw: string): FamilyEvent["status"] {
   const trimmed = raw.trim();
   if (trimmed === "Added to Google Calendar") return "Added to Calendar";
+  if (trimmed === "Approved") return "Confirmed";
   const statusParse = familyEventSchema.shape.status.safeParse(trimmed);
   return statusParse.success ? statusParse.data : "Need Review";
 }

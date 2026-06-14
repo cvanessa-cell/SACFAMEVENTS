@@ -30,7 +30,10 @@ export async function processPendingOpenAIWebhookTasks(batchSize = 20) {
 
     try {
       const event = JSON.parse(task.payloadJson) as { type: string; data?: { id?: string } };
-      await processOpenAIWebhookTaskEvent(event);
+      const result = await processOpenAIWebhookTaskEvent(event);
+      if (!result.ok) {
+        throw new Error(result.message ?? "Webhook task processing failed");
+      }
       await prisma.openAIWebhookTask.update({
         where: { id: task.id },
         data: { status: "completed", processedAt: new Date(), errorMessage: null },

@@ -24,26 +24,30 @@ const extractedEventSchema = z.object({
 });
 
 export const eventExtractionSchema = z.object({
-  source_summary: z.string(),
-  new_events: z.array(extractedEventSchema),
-  updated_events: z.array(extractedEventSchema),
-  cancelled_events: z.array(
-    z.object({
-      title: z.string(),
-      source_event_url: z.string().nullable(),
-      start_datetime: z.string().nullable(),
-      confidence: z.number().min(0).max(1),
-      needs_human_review: z.boolean(),
-      reasoning_summary: z.string(),
-    }),
-  ),
-  irrelevant_content: z.array(
-    z.object({
-      text: z.string(),
-      reason: z.string(),
-    }),
-  ),
-  warnings: z.array(z.string()),
+  source_summary: z.string().default(""),
+  new_events: z.array(extractedEventSchema).default([]),
+  updated_events: z.array(extractedEventSchema).default([]),
+  cancelled_events: z
+    .array(
+      z.object({
+        title: z.string(),
+        source_event_url: z.string().nullable(),
+        start_datetime: z.string().nullable(),
+        confidence: z.number().min(0).max(1),
+        needs_human_review: z.boolean(),
+        reasoning_summary: z.string(),
+      }),
+    )
+    .default([]),
+  irrelevant_content: z
+    .array(
+      z.object({
+        text: z.string(),
+        reason: z.string(),
+      }),
+    )
+    .default([]),
+  warnings: z.array(z.string()).default([]),
 });
 
 export type EventExtractionResult = z.infer<typeof eventExtractionSchema>;

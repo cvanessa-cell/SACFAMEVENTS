@@ -1,4 +1,10 @@
 import type { DailyWebEvent } from "@/lib/events/dailyWebEventDiscoverySchema";
+import {
+  isLateNightFamilyFriendly,
+  isLikelyAdultOnly,
+  scorePriorityEventTypes,
+  scoreToddlerRelevance,
+} from "@/lib/events/ageSuitability";
 import { extractSourceDomain } from "@/lib/events/eventDeduper";
 
 const OFFICIAL_DOMAINS = new Set([
@@ -121,6 +127,38 @@ export function scoreDailyWebEvent(
   if (event.missing_fields.length > 4) score -= event.missing_fields.length * 3;
 
   if (event.confidence_score >= 8) score += 10;
+
+  score += scoreToddlerRelevance({
+    title: event.event_title,
+    description: `${event.event_description} ${event.why_family_friendly}`,
+    ageRange: event.family_age_range,
+    category: event.event_category,
+  }) * 20;
+
+  score += scorePriorityEventTypes({
+    title: event.event_title,
+    description: event.event_description,
+    category: event.event_category,
+  }) * 6;
+
+  if (
+    isLateNightFamilyFriendly({
+      title: event.event_title,
+      description: event.event_description,
+    })
+  ) {
+    score += 8;
+  }
+
+  if (
+    isLikelyAdultOnly({
+      title: event.event_title,
+      description: event.event_description,
+      category: event.event_category,
+    })
+  ) {
+    score -= 40;
+  }
 
   return score;
 }

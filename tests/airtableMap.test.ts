@@ -39,6 +39,20 @@ describe("airtable event mapping", () => {
     expect(mapped?.status).toBe("Confirmed");
   });
 
+  it("maps Approved status from Postgres sync to Confirmed", () => {
+    const mapped = mapAirtableEventRecord({
+      id: "recApproved",
+      fields: {
+        "Event Name": "Synced Event",
+        Date: "2026-06-01",
+        Status: "Approved",
+        "Event Link": "https://example.com/synced",
+      },
+    });
+
+    expect(mapped?.status).toBe("Confirmed");
+  });
+
   it("maps Family Events table column names", () => {
     const mapped = mapAirtableEventRecord({
       id: "recXYZ",

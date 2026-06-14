@@ -56,10 +56,13 @@ export interface PublicEventData {
   free?: boolean;
   indoorOutdoor?: string;
   registrationRequired?: boolean;
+  toddlerRelevance?: number;
+  dayOfWeek?: string;
   description?: string;
   kidFriendlyNotes?: string;
   eventLink?: string;
   googleMapsLink?: string;
+  sourceName?: string;
 }
 
 export interface PublicEventCardProps {
@@ -76,11 +79,11 @@ function buildMapsLink(event: PublicEventData): string {
 export function PublicEventCard({ event }: PublicEventCardProps) {
   const maps = buildMapsLink(event);
 
-  let dayOfWeek = "";
+  let dayOfWeek = event.dayOfWeek ?? "";
   let monthDay = "";
   try {
     const d = parseISO(event.date);
-    dayOfWeek = format(d, "EEE");
+    if (!dayOfWeek) dayOfWeek = format(d, "EEE");
     monthDay = format(d, "MMM d");
   } catch {
     /* keep raw */
@@ -107,9 +110,27 @@ export function PublicEventCard({ event }: PublicEventCardProps) {
 
       <div className="flex min-w-0 flex-1 flex-col gap-2.5 p-4 sm:p-5">
         <div className="flex flex-wrap items-start gap-2">
-          <h3 className="min-w-0 flex-1 text-base font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">
-            {event.eventName}
-          </h3>
+          {event.eventLink ? (
+            <h3 className="min-w-0 flex-1 text-base font-semibold leading-snug">
+              <a
+                href={event.eventLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-foreground transition-colors hover:text-primary"
+              >
+                {event.eventName}
+              </a>
+            </h3>
+          ) : (
+            <h3 className="min-w-0 flex-1 text-base font-semibold leading-snug text-foreground">
+              {event.eventName}
+            </h3>
+          )}
+          {event.toddlerRelevance != null && event.toddlerRelevance >= 0.4 ? (
+            <Badge variant="secondary" className="shrink-0">
+              Ages 2–6 friendly
+            </Badge>
+          ) : null}
           {event.free ? (
             <Badge variant="success" className="shrink-0">
               Free
@@ -179,7 +200,8 @@ export function PublicEventCard({ event }: PublicEventCardProps) {
           ) : null}
         </div>
 
-        <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
+        <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-1">
+          <div className="flex flex-wrap items-center gap-2">
           {event.eventLink ? (
             <Button variant="default" size="sm" className="h-8" asChild>
               <a href={event.eventLink} target="_blank" rel="noopener noreferrer">
@@ -195,6 +217,12 @@ export function PublicEventCard({ event }: PublicEventCardProps) {
                 Map
               </a>
             </Button>
+          ) : null}
+          </div>
+          {event.sourceName ? (
+            <span className="text-xs text-muted-foreground">
+              via {event.sourceName}
+            </span>
           ) : null}
         </div>
       </div>

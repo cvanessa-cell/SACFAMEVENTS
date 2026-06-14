@@ -42,6 +42,8 @@ interface PublicEvent {
   registrationRequired?: boolean;
   registrationUrl?: string;
   confidence?: number;
+  toddlerRelevance?: number;
+  dayOfWeek?: string;
   status: string;
   kidFriendlyNotes?: string;
   airtableRecordId?: string;
@@ -139,7 +141,13 @@ export default function DiscoverPage() {
       result = result.filter((ev) => ev.free === true);
     }
 
+    if (filters.toddlerFriendlyOnly) {
+      result = result.filter((ev) => (ev.toddlerRelevance ?? 0) >= 0.4);
+    }
+
     result.sort((a, b) => {
+      const toddlerDelta = (b.toddlerRelevance ?? 0) - (a.toddlerRelevance ?? 0);
+      if (toddlerDelta !== 0) return toddlerDelta;
       try {
         return parseISO(a.date).getTime() - parseISO(b.date).getTime();
       } catch {
@@ -229,7 +237,9 @@ export default function DiscoverPage() {
             <div className="space-y-1">
               <p className="text-lg font-semibold text-foreground">No events match</p>
               <p className="max-w-sm text-sm text-muted-foreground">
-                Try a wider date range, another city, or clear filters to see more results.
+                {publicEvents.length === 0
+                  ? "No approved upcoming events yet. Check back soon — new family-friendly picks are added after review."
+                  : "Try a wider date range, another city, or clear filters to see more results."}
               </p>
             </div>
           </CardContent>
@@ -238,7 +248,7 @@ export default function DiscoverPage() {
         <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
           {filtered.map((ev, i) => (
             <PublicEventCard
-              key={ev.airtableRecordId ?? `${ev.eventName}-${i}`}
+              key={ev.id ?? ev.airtableRecordId ?? `${ev.eventName}-${i}`}
               event={ev}
             />
           ))}
