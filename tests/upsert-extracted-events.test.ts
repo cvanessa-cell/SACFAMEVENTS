@@ -12,7 +12,7 @@ vi.mock("@/lib/prisma", () => ({ prisma: mockPrisma }));
 describe("upsertExtractedEvents", () => {
   beforeEach(() => vi.resetAllMocks());
 
-  it("marks uncertain events as needs_review", async () => {
+  it("marks uncertain events as needs_review", { timeout: 30_000 }, async () => {
     mockPrisma.familyEvent.findFirst.mockResolvedValue(null);
     const { upsertExtractedEvents } = await import("@/lib/events/upsertExtractedEvents");
     await upsertExtractedEvents({

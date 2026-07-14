@@ -11,6 +11,7 @@ import {
   mapPostgresRowToPublicEvent,
   mergePublicEvents,
   startOfTodayPacific,
+  type PublicEvent,
 } from "@/lib/events/publicEvents";
 import { prisma } from "@/lib/prisma";
 
@@ -53,15 +54,15 @@ export async function GET() {
 
     const postgresEvents = rows
       .map((row) => mapPostgresRowToPublicEvent(row))
-      .filter((ev): ev is NonNullable<typeof ev> => ev !== null);
+      .filter((ev): ev is PublicEvent => ev !== null);
 
-    let airtableEvents: ReturnType<typeof mapFamilyEventToPublicEvent>[] = [];
+    let airtableEvents: PublicEvent[] = [];
     if (isAirtableConfigured()) {
       try {
         const airtableRows = await fetchFamilyEventsFromAirtable();
         airtableEvents = airtableRows
           .map((row) => mapFamilyEventToPublicEvent(row))
-          .filter((ev): ev is NonNullable<typeof ev> => ev !== null);
+          .filter((ev): ev is PublicEvent => ev !== null);
         airtableEvents = filterUpcomingPublicEvents(airtableEvents, todayYmd);
       } catch (err) {
         console.warn("Public events: Airtable fetch failed, using Postgres only:", err);

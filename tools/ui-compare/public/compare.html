@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>UI Compare — Split view</title>
+  <link rel="stylesheet" href="/assets/styles.css" />
+</head>
+<body class="compare-page">
+  <header>
+    <div class="compare-header">
+      <div>
+        <h1>Split-screen comparison</h1>
+        <p class="subtitle" id="compare-subtitle">Loading…</p>
+      </div>
+      <button type="button" class="secondary" id="close-btn">Close comparison</button>
+    </div>
+    <div class="route-tabs" id="route-tabs"></div>
+  </header>
+  <main class="compare-main">
+    <p class="meta compare-hint">Each pane is a live, fully interactive app. Use the notes panel for indexed differences (analyzed in the background).</p>
+    <p class="meta" id="mismatch-line"></p>
+    <div class="compare-layout">
+      <section class="live-pane">
+        <div class="pane-title" id="left-title">Left</div>
+        <div class="live-wrap" id="left-pane">
+          <iframe id="left-frame" title="Left version" sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"></iframe>
+        </div>
+      </section>
+      <section class="live-pane">
+        <div class="pane-title" id="right-title">Right</div>
+        <div class="live-wrap" id="right-pane">
+          <iframe id="right-frame" title="Right version" sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"></iframe>
+        </div>
+      </section>
+      <aside class="notes">
+        <h2 style="margin-top:0;font-size:1rem;">Difference notes</h2>
+        <ol id="notes-list"></ol>
+      </aside>
+    </div>
+    <p id="route-status" class="status" role="status"></p>
+  </main>
+  <script type="module" src="/assets/compare.js"></script>
+</body>
+</html>
+

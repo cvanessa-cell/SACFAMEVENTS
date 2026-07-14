@@ -15,9 +15,12 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Sacramento Family Event Finder",
+  title: {
+    default: "Sacramento Family Events",
+    template: "%s | Sacramento Family Events",
+  },
   description:
-    "Discover family-friendly events in Sacramento and Placer counties, review in Airtable, and add to Google Calendar.",
+    "Discover family-friendly events in Sacramento and Placer counties — curated picks for parents, toddlers, and caregivers.",
 };
 
 export default function RootLayout({

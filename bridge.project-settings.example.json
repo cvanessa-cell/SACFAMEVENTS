@@ -1,0 +1,23 @@
+{
+  "projectName": "Sacramento Family Event Finder",
+
+  "goal": "Ship and continuously improve SacFam — family event discovery, AI extraction, operator review, and multi-account Google Calendar export for Sacramento-area sources",
+
+  "instructions": "Next.js App Router on port 3333 (public UI at http://localhost:3333/events, admin at /admin/*). Prisma + Supabase Postgres. Commit on main when user triggers push. Minimize scope per iteration but do NOT defer valuable work solely because ChatGPT labels it 'out of MVP scope' or 'loop complete'. Treat discovery pipeline (/api/events/discover), source monitoring, AI extraction queue, /admin/event-review (approve/reject/calendar picker), multi-account Google OAuth, Slack digest, Zapier hooks, Chrome extension, and Airtable read paths as in-scope when actionable. Run lint, npm test, and npm run build after each change. Update relevant docs under docs/ when workflow behavior changes. Only stop the auto-loop when ChatGPT has no concrete implementation step AND remaining items are blocked on user-only decisions (Google OAuth consent, OpenAI/Airtable/Slack secrets, production cron).",
+
+  "iterationMode": "run_to_completion",
+
+  "iterationCount": 99,
+
+  "runToCompletion": true,
+
+  "stopOnNoActionableRecommendation": false,
+
+  "autoBridgeBetweenIterations": true,
+
+  "buildAndTestEachIteration": true,
+
+  "openBrowserAfterLoop": true,
+
+  "priority": "High"
+}

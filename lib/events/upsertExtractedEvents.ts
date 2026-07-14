@@ -76,7 +76,7 @@ export async function upsertExtractedEvents(input: {
   }
 
   for (const ev of input.parsed.cancelled_events) {
-    const start = parseStoredDate(ev.start_datetime, ev.timezone || "America/Los_Angeles");
+    const start = parseStoredDate(ev.start_datetime, "America/Los_Angeles");
     const existing = await prisma.familyEvent.findFirst({
       where: likelyDuplicateWhere({
         title: ev.title,

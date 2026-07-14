@@ -242,7 +242,7 @@ export function mergePublicEvents(
     }
   }
 
-  return [...merged.values()].sort((a, b) => {
+  return Array.from(merged.values()).sort((a, b) => {
     const dateCmp = a.date.localeCompare(b.date);
     if (dateCmp !== 0) return dateCmp;
     return a.eventName.localeCompare(b.eventName);

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>UI Compare — Sacramento Family Event Finder</title>
+  <link rel="stylesheet" href="/assets/styles.css" />
+</head>
+<body>
+  <header>
+    <h1>UI branch compare</h1>
+    <p class="subtitle">Review main, branches, and uncommitted changes — then compare live, fully interactive UIs side by side with indexed difference notes.</p>
+  </header>
+  <main>
+    <section id="versions" class="grid" aria-live="polite"></section>
+
+    <section class="panel" id="commit-panel" hidden>
+      <h2>Commit uncommitted changes</h2>
+      <p class="meta">Optional: save local edits before comparing a branch.</p>
+      <textarea id="commit-message" placeholder="Describe your UI changes…"></textarea>
+      <div class="actions">
+        <button type="button" id="commit-btn">Commit all changes</button>
+      </div>
+      <p id="commit-status" class="status" role="status"></p>
+    </section>
+
+    <section class="panel">
+      <h2>Compare versions</h2>
+      <p class="meta">Pick one version for the left pane and one for the right pane, then open the split-screen diff view.</p>
+      <div class="actions">
+        <button type="button" id="compare-btn" disabled>Compare in browser</button>
+      </div>
+      <p id="compare-status" class="status" role="status"></p>
+    </section>
+  </main>
+  <script type="module" src="/assets/app.js"></script>
+</body>
+</html>

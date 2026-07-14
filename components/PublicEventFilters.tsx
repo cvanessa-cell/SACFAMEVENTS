@@ -21,6 +21,7 @@ export interface PublicFilters {
   city: string;
   category: string;
   freeOnly: boolean;
+  toddlerFriendlyOnly: boolean;
   datePreset: DatePreset;
 }
 
@@ -29,6 +30,7 @@ export const DEFAULT_FILTERS: PublicFilters = {
   city: "",
   category: "",
   freeOnly: false,
+  toddlerFriendlyOnly: false,
   datePreset: "all",
 };
 
@@ -64,6 +66,7 @@ export function PublicEventFilters({
     filters.city,
     filters.category,
     filters.freeOnly,
+    filters.toddlerFriendlyOnly,
   ].filter(Boolean).length;
 
   const update = (patch: Partial<PublicFilters>) => onChange({ ...filters, ...patch });
@@ -199,6 +202,37 @@ export function PublicEventFilters({
               ) : null}
             </span>
             Free only
+          </label>
+
+          <label
+            className={cn(
+              "flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors",
+              filters.toddlerFriendlyOnly
+                ? "border-primary/40 bg-primary/10 text-primary"
+                : "border-input bg-background hover:bg-muted/50",
+            )}
+          >
+            <input
+              type="checkbox"
+              checked={filters.toddlerFriendlyOnly}
+              onChange={(e) => update({ toddlerFriendlyOnly: e.target.checked })}
+              className="sr-only"
+            />
+            <span
+              className={cn(
+                "flex h-4 w-4 shrink-0 items-center justify-center rounded border",
+                filters.toddlerFriendlyOnly
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-input",
+              )}
+            >
+              {filters.toddlerFriendlyOnly ? (
+                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              ) : null}
+            </span>
+            Ages 2–6 picks
           </label>
 
           {activeCount > 0 ? (

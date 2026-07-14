@@ -76,3 +76,6 @@ extension/chrome/dist/
 Thumbs.db
 
 .vercel
+
+# UI branch comparison reports
+/ui-diff-report/

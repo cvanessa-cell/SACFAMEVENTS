@@ -35,7 +35,9 @@
     "agent:index:report": "tsx agent-conversation-indexer/src/cli.ts report",
     "agent:index:all": "tsx agent-conversation-indexer/src/cli.ts all --dry-run",
     "agent:index:typecheck": "tsc -p agent-conversation-indexer/tsconfig.json",
-    "openai-app:setup": "tsx scripts/print-openai-app-setup.ts"
+    "openai-app:setup": "tsx scripts/print-openai-app-setup.ts",
+    "compare:ui": "node scripts/compare-ui-branches.mjs",
+    "ui-compare": "node tools/ui-compare/server.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -86,6 +88,9 @@
     "tsx": "^4.21.0",
     "typescript": "^5",
     "vite": "^6.4.2",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "pixelmatch": "^7.1.0",
+    "playwright": "^1.58.2",
+    "pngjs": "^7.0.0"
   }
 }
