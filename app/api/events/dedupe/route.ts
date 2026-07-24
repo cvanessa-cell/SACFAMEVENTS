@@ -3,11 +3,21 @@ import { NextResponse } from "next/server";
 import { buildDuplicateKey } from "@/lib/events/dedupeEvents";
 import { prisma } from "@/lib/prisma";
 
+function isAuthorized(req: Request): boolean {
+  const secret = process.env.CRON_SECRET?.trim();
+  if (!secret) return false;
+  return req.headers.get("authorization") === `Bearer ${secret}`;
+}
+
 /**
  * Marks lower-confidence duplicate FamilyEvent rows within the review pipeline.
  * Keeps the highest-confidence row per duplicate key; others become status duplicate.
  */
-export async function POST() {
+export async function POST(req: Request) {
+  if (!isAuthorized(req)) {
+    return NextResponse.json({ ok: false, message: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const candidates = await prisma.familyEvent.findMany({
       where: {
