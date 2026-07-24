@@ -41,10 +41,17 @@ export async function upsertExtractedEvents(input: {
       orderBy: { updatedAt: "desc" },
     });
 
-    const status =
+    const computedStatus =
       ev.needs_human_review || ev.confidence < input.autoApproveConfidence
         ? "needs_review"
         : "approved";
+
+    // Re-extraction matching an existing row must UPDATE that row, not mark it
+    // duplicate of itself. Preserve terminal human decisions only.
+    const status =
+      existing?.status === "cancelled" || existing?.status === "rejected"
+        ? existing.status
+        : computedStatus;
 
     const payload = {
       title: ev.title,
@@ -64,7 +71,7 @@ export async function upsertExtractedEvents(input: {
       registrationUrl: ev.registration_url,
       familyFriendlyScore: ev.family_friendly_score,
       confidence: ev.confidence,
-      status: existing && existing.duplicateKey === duplicateKey ? "duplicate" : status,
+      status,
       duplicateKey,
     };
 
